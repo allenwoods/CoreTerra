@@ -200,21 +200,45 @@
             </div>
         );
 
-        const KanbanBoard = ({ tasks, onTaskClick }) => {
+        const KanbanBoard = ({ tasks, onTaskClick, onCommand, onFilterChange, filterText }) => {
             const [command, setCommand] = useState('');
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter' && command.trim()) {
+                    onCommand(command);
+                    setCommand('');
+                }
+            };
+
+            // Filter tasks locally for display
+            const filterTasks = (list) => {
+                if (!filterText) return list;
+                const lower = filterText.toLowerCase();
+                return list.filter(t =>
+                    t.title.toLowerCase().includes(lower) ||
+                    t.id.toLowerCase().includes(lower)
+                );
+            };
+
             return (
                 <div className="flex-1 flex flex-col min-w-0 overflow-x-auto bg-[#161616]">
                     <div className="px-6 py-4 border-b-4 border-[#2a2a2a] bg-[#1a1a1a]">
                         <div className="relative">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9dabb9] text-xl">search</span>
-                            <input className="w-full bg-[#000] border-2 border-[#333] h-12 pl-12 pr-4 text-white/90 placeholder:text-[#555] focus:outline-0 focus:border-primary text-lg font-mono" placeholder="Filter tasks..." type="text" />
+                            <input
+                                className="w-full bg-[#000] border-2 border-[#333] h-12 pl-12 pr-4 text-white/90 placeholder:text-[#555] focus:outline-0 focus:border-primary text-lg font-mono"
+                                placeholder="Filter tasks (e.g. 'design' or 'CT-128')..."
+                                type="text"
+                                value={filterText}
+                                onChange={(e) => onFilterChange(e.target.value)}
+                            />
                         </div>
                     </div>
                     <div className="flex-1 p-6 flex gap-6 overflow-x-auto">
-                        <KanbanColumn title="Inbox" count={tasks.inbox.length} tasks={tasks.inbox} onTaskClick={onTaskClick} />
-                        <KanbanColumn title="Next" count={tasks.next.length} tasks={tasks.next} onTaskClick={onTaskClick} />
-                        <KanbanColumn title="Waiting For" count={tasks.waiting.length} tasks={tasks.waiting} onTaskClick={onTaskClick} />
-                        <KanbanColumn title="Done" count={tasks.done.length} tasks={tasks.done} isDone={true} onTaskClick={onTaskClick} />
+                        <KanbanColumn title="Inbox" count={filterTasks(tasks.inbox).length} tasks={filterTasks(tasks.inbox)} onTaskClick={onTaskClick} />
+                        <KanbanColumn title="Next" count={filterTasks(tasks.next).length} tasks={filterTasks(tasks.next)} onTaskClick={onTaskClick} />
+                        <KanbanColumn title="Waiting For" count={filterTasks(tasks.waiting).length} tasks={filterTasks(tasks.waiting)} onTaskClick={onTaskClick} />
+                        <KanbanColumn title="Done" count={filterTasks(tasks.done).length} tasks={filterTasks(tasks.done)} isDone={true} onTaskClick={onTaskClick} />
                     </div>
                     <div className="flex items-center px-4 py-3 gap-3 border-t-4 border-[#2a2a2a] bg-[#0c0c0c]">
                         <div className="bg-center bg-no-repeat aspect-square bg-cover size-10 border-2 border-[#fff]" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAu627pw9HLspmbpQrYJ5l7a3ZEasDUlVCJ5oLx0oRMORN4e2T2I3kocxkfnLxMcwAaY6QpdP2dsq-zFGlBQdatzQ8_vKfcGI-PKP5DGr7d4Z6DcuWbpOpaTNQQbeXwITGVYbRVteqGplaDwU65GJPKwzKuYJVg8TUqb1u1IqH7CxJKQgws_kYb6lrFrHg1f6ohCOV_RjUUZQbz-qGQLq7VHF1zYneOYs2dHWRkTpE7fQnCxBCHRTBcP9nmozeh5FvVy-kUEmKiw_eA")' }}></div>
@@ -222,9 +246,10 @@
                             <div className="flex w-full flex-1 items-stretch h-full">
                                 <input
                                     className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-[#00ff00] focus:outline-0 border-2 border-[#333] focus:border-primary bg-[#000] h-full placeholder:text-[#005500] px-4 text-lg font-mono"
-                                    placeholder="> Command input..."
+                                    placeholder="> Type task title and press Enter..."
                                     value={command}
                                     onChange={(e) => setCommand(e.target.value)}
+                                    onKeyDown={handleKeyDown}
                                 />
                             </div>
                         </label>
@@ -336,6 +361,7 @@ $ get tasks --assignee='@david'
             const [tasks, setTasks] = useState(initialTasks);
             const [logs, setLogs] = useState(initialLogs);
             const [selectedTask, setSelectedTask] = useState(null);
+            const [filterText, setFilterText] = useState('');
 
             const handleTaskUpdate = (updatedTask, logMessage) => {
                 // Update Logs
@@ -372,11 +398,43 @@ $ get tasks --assignee='@david'
                 setSelectedTask(updatedTask);
             };
 
+            const handleCommand = (cmdText) => {
+                // Generate a random ID
+                const id = 'CT-' + Math.floor(100 + Math.random() * 900);
+                const title = cmdText; // Treat whole text as title for simplicity
+
+                const newTask = {
+                    id,
+                    status: 'inbox',
+                    title,
+                    priority: 'p3',
+                    priorityColor: 'bg-[#3B2E49] text-[#E0B0FF]',
+                    assignee: { initial: '?', color: 'bg-gray-700', name: 'Unassigned' },
+                    role: 'Unassigned',
+                    body: ''
+                };
+
+                // Add to Inbox
+                setTasks(prev => ({
+                    ...prev,
+                    inbox: [newTask, ...prev.inbox]
+                }));
+
+                const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+                setLogs(prev => [`[${timestamp}] Created Task #${id}: '${title}'`, ...prev]);
+            };
+
             return (
                 <div className="flex h-screen w-full font-mono">
                     <Sidebar />
                     <main className="flex-1 flex min-w-0">
-                        <KanbanBoard tasks={tasks} onTaskClick={setSelectedTask} />
+                        <KanbanBoard
+                            tasks={tasks}
+                            onTaskClick={setSelectedTask}
+                            onCommand={handleCommand}
+                            filterText={filterText}
+                            onFilterChange={setFilterText}
+                        />
                         {selectedTask ? (
                             <TaskDetail
                                 task={selectedTask}
