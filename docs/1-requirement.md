@@ -56,8 +56,8 @@ C·O·R·E 工作流（Capture, Clarify, Organize, Review, Engage）是 CoreTerr
 - **规则**:
   - **强制关联角色 (Role)**: 每个任务都必须被强制关联到一个Role。Role在此系统中等同于GTD中的"关注领域"（Areas of Focus），它代表了用户承担的不同职责或关注的生活/工作领域（如"产品管理"、"家庭财务"）。
   - **元数据赋予**: 任务被赋予优先级（priority）、截止日期（due_date）、标签（tags）等关键元数据。
-  - **状态变更**: 完成上述操作后，任务状态从inbox流转至active，正式进入待办列表。
-- **产出**: 状态为active，且包含完整元数据的可执行任务。
+  - **状态变更**: 完成上述操作后，任务状态从inbox流转至 next (Next Actions) 或 waiting (Waiting For)。
+- **产出**: 状态为 next 或 waiting，且包含完整元数据的可执行任务。
 
 ### 2.4 Review (回顾)
 
@@ -65,8 +65,8 @@ C·O·R·E 工作流（Capture, Clarify, Organize, Review, Engage）是 CoreTerr
 
 ### 2.5 Engage (执行)
 
-- **定义**: 这是用户实际执行active状态任务的阶段。任务一旦完成，其状态应流转至completed。最终，已完成的任务可以被归档，状态变为archived，以保持工作区的整洁。
-- **产出**: 状态为completed或archived的任务。
+- **定义**: 这是用户实际执行active状态任务的阶段。任务一旦完成，其状态应流转至completed (done)。最终，已完成的任务可以被归档，状态变为archived，以保持工作区的整洁。
+- **产出**: 状态为 done 或 archived 的任务。
 
 C·O·R·E 模型为系统提供了一个结构化的流程骨架。接下来的功能需求，便是实现这一流程并服务于我们两种核心用户的具体体现。
 
@@ -93,7 +93,7 @@ C·O·R·E 模型为系统提供了一个结构化的流程骨架。接下来的
 - **3.3.2 CLI 交互**: 提供强大的查询和排序参数。
 - **3.3.3 Web UI 交互**: Web 界面必须提供至少两种核心视图：
   - **列表视图 (List View)**: 类似 HubSpot 或 Jira 的可定制化表格视图，支持用户自定义显示列、按列排序和多条件过滤。
-  - **看板视图 (Kanban View)**: 以任务状态或角色为列，用户可以通过拖放操作直观地管理任务。
+  - **看板视图 (Kanban View)**: 以任务状态 (Inbox, Next, Waiting, Done) 或角色为列，用户可以通过拖放操作直观地管理任务。
 
 ### 3.4 任务状态更新 (Update)
 
@@ -134,7 +134,7 @@ C·O·R·E 模型为系统提供了一个结构化的流程骨架。接下来的
 字段名	数据类型	描述与AI相关性	示例
 id	String	任务的唯一标识符 (e.g., "COT-123")。作为文件名和Git追溯的关键。	COT-123
 title	String	任务的标题，是AI进行摘要和分类的主要文本输入。	Implement user authentication endpoint
-status	Enum	任务的当前状态 (inbox, active, completed, archived)。是AI分析任务生命周期的核心字段。	active
+status	Enum	任务的当前状态 (inbox, next, waiting, done, archived)。是AI分析任务生命周期的核心字段。	next
 role	String	任务所属的职责/关注领域。AI可利用此字段进行上下文分组。	Engineering
 priority	Integer	优先级 (1-5)。AI可用于预测任务重要性或风险。	5
 parent_id	String (Nullable)	可选，用于链接到父任务（项目），构建层级结构，为AI提供结构化上下文。	COT-110
