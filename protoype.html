@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>CoreTerra Kanban Dashboard</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+        .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        body { overflow: hidden; } /* Prevent double scrollbars */
+    </style>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#111111",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"],
+              "mono": ["JetBrains Mono", "monospace"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#EAEAEA] font-display antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Global Destructuring
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate } = ReactRouterDOM;
+        
+        // --- DATA ---
+        const taskData = {
+          todo: [
+            { id: 'CT-128', title: 'Design New User Onboarding Flow', priority: 'p2', priorityColor: 'bg-[#4A3E2D] text-[#FFC107]', assignee: { initial: 'UI', color: 'bg-gray-500', name: 'UI Designer' } },
+            { id: 'CT-130', title: 'Implement Search API Endpoint', priority: 'p3', priorityColor: 'bg-[#3B2E49] text-[#E0B0FF]', assignee: { initial: 'D', color: 'bg-green-800', name: 'David' } },
+            { id: 'CT-131', title: 'Fix Database Connection Leak', priority: 'p1', priorityColor: 'bg-[#542B2B] text-[#FF8A80]', assignee: { initial: 'C', color: 'bg-red-800', name: 'Charles' } },
+          ],
+          inProgress: [
+            { id: 'CT-124', title: 'Refactor Authentication Service', priority: 'p1', priorityColor: 'bg-[#542B2B] text-[#FF8A80]', assignee: { initial: 'D', color: 'bg-green-800', name: 'David' } },
+          ],
+          done: [
+            { id: 'CT-119', title: 'Update Deployment Scripts', priority: 'p2', priorityColor: 'bg-[#4A3E2D] text-[#FFC107]', assignee: { initial: 'B', color: 'bg-blue-800', name: 'Brenda' } },
+            { id: 'CT-115', title: 'Onboard New Frontend Developer', priority: 'p3', priorityColor: 'bg-[#3B2E49] text-[#E0B0FF]', assignee: { initial: 'B', color: 'bg-blue-800', name: 'Brenda' } },
+          ]
+        };
+
+        // --- COMPONENTS ---
+
+        const NavLink = ({ icon, text, active = false, to = "#" }) => (
+            <Link to={to} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer ${active ? 'bg-primary/20 text-white' : 'text-[#9dabb9] hover:bg-white/5'}`}>
+                <span className="material-symbols-outlined text-base">{icon}</span>
+                <p className="font-medium">{text}</p>
+            </Link>
+        );
+
+        const NavGroup = ({ icon, color, title, children, defaultExpanded = true }) => {
+            const [expanded, setExpanded] = useState(defaultExpanded);
+
+            return (
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 py-1 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+                        <span className="material-symbols-outlined text-base text-[#9dabb9]">{expanded ? 'expand_more' : 'chevron_right'}</span>
+                        <div className={`w-2 h-2 rounded-full ${color}`}></div>
+                        <p className="text-white">{title}</p>
+                    </div>
+                    {expanded && <div className="pl-6 flex flex-col gap-1">{children}</div>}
+                </div>
+            );
+        };
+        
+        const NavSubItem = ({ color, text }) => (
+            <div className="flex items-center gap-2 py-1">
+                <span className="material-symbols-outlined text-base invisible"></span>
+                <div className={`w-2 h-2 rounded-full ${color}`}></div>
+                <p className="text-[#9dabb9]">{text}</p>
+            </div>
+        );
+        
+        const Sidebar = () => (
+            <aside className="w-[280px] min-w-[240px] max-w-[400px] flex-shrink-0 bg-[#161616] border-r border-[#2a2a2a] p-4 flex flex-col resize-x overflow-auto">
+                <div className="flex items-center gap-3 mb-6 px-1">
+                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSOR72eK1H5cCfSa1I3VSaTQGtjYThNG9XIAbrPmHmFGdwj00ApRaoTp5Thj60nEoKEszuJwFg5I_T1xNWHmuBA5dTPbJxhBlQeksRAA8fXppcaZQEAnayvUoputQ0j8H5kRMKpnLtwG51hcZPEMZq-ijB2VVeRl3yxDmQU4x5oMoL-rpqbRiGe1AKLw7NH3sSbrD-RLgacDfcn4Hh-LaOER-CuWCCK0Klz7i97I48cXYBCuj3HDs_xqM-R-8IdlhlKq0gt9QIMEYB")' }}></div>
+                    <div className="flex flex-col">
+                        <h1 className="text-white text-base font-medium leading-normal">CoreTerra</h1>
+                        <p className="text-[#9dabb9] text-sm font-normal leading-normal">AI Project Management</p>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-1 text-sm">
+                    <NavLink icon="dashboard" text="Kanban Dashboard" active={true} to="/" />
+                    <NavLink icon="folder_managed" text="Role Index" />
+
+                    <div className="flex flex-col gap-1 pl-4 mt-2">
+                        <NavGroup icon="expand_more" color="bg-[#2ECC71]" title="Project Lead" defaultExpanded={true}>
+                            <NavSubItem color="bg-[#2ECC71]" text="Brenda" />
+                        </NavGroup>
+                        <NavGroup icon="expand_more" color="bg-[#E74C3C]" title="Backend Dev" defaultExpanded={true}>
+                           <NavSubItem color="bg-[#E74C3C]" text="Charles" />
+                           <NavSubItem color="bg-[#2ECC71]" text="David" />
+                        </NavGroup>
+                        <NavGroup icon="chevron_right" color="bg-[#2ECC71]" title="UI Designer" defaultExpanded={false} />
+                        <NavGroup icon="chevron_right" color="bg-[#2ECC71]" title="Frontend Dev" defaultExpanded={false} />
+                    </div>
+                </div>
+                <div className="mt-auto flex flex-col gap-1">
+                    <NavLink icon="settings" text="Settings" />
+                    <NavLink icon="help" text="Help & Support" />
+                </div>
+            </aside>
+        );
+
+        const TaskCard = ({ task, isDone }) => (
+            <div className={`bg-[#1C1C1C] border border-[#2a2a2a] rounded-lg p-4 cursor-grab ${isDone ? 'opacity-60' : ''}`}>
+                <div className="flex justify-between items-start">
+                    <p className={`text-sm text-white/90 mb-3 pr-2 ${isDone ? 'line-through' : ''}`}>{task.title}</p>
+                    <span className="material-symbols-outlined text-[#9dabb9] cursor-pointer text-base">info</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                        <span className="font-mono-custom text-[#9dabb9]">{task.id}</span>
+                        <span className={`px-2 py-0.5 ${task.priorityColor} rounded`}>{task.priority}</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full ${task.assignee.color} text-white flex items-center justify-center text-[10px] font-bold border-2 border-[#1C1C1C]`} title={task.assignee.name}>
+                        {task.assignee.initial}
+                    </div>
+                </div>
+            </div>
+        );
+
+        const KanbanColumn = ({ title, count, tasks, isDone = false }) => (
+            <div className="w-[320px] flex-shrink-0 flex flex-col">
+                <div className="flex items-center justify-between pb-4">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-base font-medium text-white">{title}</h2>
+                        <span className="text-sm font-mono-custom text-[#9dabb9] bg-[#2a2a2a] px-2 py-0.5 rounded-full">{count}</span>
+                    </div>
+                    <span className="material-symbols-outlined text-[#9dabb9] cursor-pointer">more_horiz</span>
+                </div>
+                <div className="flex flex-col gap-4 overflow-y-auto pr-2 flex-1">
+                    {tasks.map(task => <TaskCard key={task.id} task={task} isDone={isDone} />)}
+                </div>
+            </div>
+        );
+
+        const InfoPanel = () => (
+            <aside className="w-[360px] min-w-[300px] max-w-[500px] flex-shrink-0 flex flex-col resize-x overflow-auto">
+                <div className="flex-1 p-6 font-mono-custom text-xs leading-relaxed overflow-y-auto">
+                    <h2 className="text-sm font-display font-medium text-white mb-2">TEAM STATUS</h2>
+                    <p className="text-white/80 whitespace-pre-wrap pb-3 pt-1">{`Alex: Online
+Brenda: In-Focus (API Design)
+Charles: Blocked (Waiting for review)`}
+                    </p>
+                    <h2 className="text-sm font-display font-medium text-white mb-2 mt-4">LOG STREAM</h2>
+                    <p className="text-white/80 whitespace-pre-wrap">{`[10:45:12] Task #CT-124 moved to 'In Progress' by @david
+[10:44:50] New commit pushed to 'main' by @alex
+[10:42:10] System: PQI for 'Frontend' dropped to 72.
+[10:35:01] Task #CT-127 assigned to @brenda
+[10:33:45] User @charles changed status to 'Blocked'`}
+                    </p>
+                </div>
+                <div className="flex-1 p-6 border-t border-[#2a2a2a] font-mono-custom text-xs leading-relaxed overflow-y-auto">
+                    <h2 className="text-sm font-display font-medium text-white mb-2">COMMAND OUTPUT</h2>
+                    <p className="text-white/80 whitespace-pre-wrap">{`$ pqi get --role='Frontend'
+> Project Quality Index for 'Frontend' is 72 (Red).
+$ get tasks --assignee='@david'
+> 1. #CT-124 Refactor Authentication Service
+> 2. #CT-131 Fix Database Connection Leak`}
+                    </p>
+                </div>
+            </aside>
+        );
+
+        const KanbanBoard = () => {
+            const [command, setCommand] = useState('');
+            return (
+                <div className="flex-1 flex flex-col min-w-0 border-r border-[#2a2a2a] overflow-x-auto">
+                    <div className="px-6 py-4 border-b border-[#2a2a2a]">
+                        <div className="relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9dabb9] text-xl">search</span>
+                            <input className="w-full bg-[#283039] border-none rounded-lg h-10 pl-10 pr-4 text-white/90 placeholder:text-[#9dabb9]/70 focus:outline-0 focus:ring-2 focus:ring-primary text-sm font-display" placeholder="Add Filter, for example, only me" type="text" />
+                        </div>
+                    </div>
+                    <div className="flex-1 p-6 flex gap-6 overflow-x-auto">
+                        <KanbanColumn title="To Do" count={taskData.todo.length} tasks={taskData.todo} />
+                        <KanbanColumn title="In Progress" count={taskData.inProgress.length} tasks={taskData.inProgress} />
+                        <KanbanColumn title="Done" count={taskData.done.length} tasks={taskData.done} isDone={true} />
+                    </div>
+                    <div className="flex items-center px-4 py-3 gap-3 border-t border-[#2a2a2a] bg-[#111111]">
+                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8 shrink-0" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAu627pw9HLspmbpQrYJ5l7a3ZEasDUlVCJ5oLx0oRMORN4e2T2I3kocxkfnLxMcwAaY6QpdP2dsq-zFGlBQdatzQ8_vKfcGI-PKP5DGr7d4Z6DcuWbpOpaTNQQbeXwITGVYbRVteqGplaDwU65GJPKwzKuYJVg8TUqb1u1IqH7CxJKQgws_kYb6lrFrHg1f6ohCOV_RjUUZQbz-qGQLq7VHF1zYneOYs2dHWRkTpE7fQnCxBCHRTBcP9nmozeh5FvVy-kUEmKiw_eA")' }}></div>
+                        <label className="flex flex-col min-w-40 h-10 flex-1">
+                            <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
+                                <input 
+                                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white/90 focus:outline-0 focus:ring-2 focus:ring-primary border-none bg-[#283039] h-full placeholder:text-[#9dabb9]/70 px-4 text-sm font-mono-custom" 
+                                    placeholder="> Add a task or command..." 
+                                    value={command} 
+                                    onChange={(e) => setCommand(e.target.value)}
+                                />
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- SCREEN ---
+        const DashboardPage = () => {
+            return (
+                <div className="flex h-screen w-full">
+                    <Sidebar />
+                    <main className="flex-1 flex min-w-0">
+                        <KanbanBoard />
+                        <InfoPanel />
+                    </main>
+                </div>
+            );
+        };
+
+        // --- APP ---
+        const App = () => {
+            return (
+                <MemoryRouter>
+                    <Routes>
+                        <Route path="/" element={<DashboardPage />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        };
+
+        // --- RENDER ---
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(<App />);
+
+    </script>
+</body>
+</html>
