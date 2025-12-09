@@ -302,12 +302,15 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
               <User className="w-3.5 h-3.5" />
               创建者
             </Label>
-            <Select value={creator} onValueChange={setCreator}>
+            <Select
+              value={creator || '_none'}
+              onValueChange={(v) => setCreator(v === '_none' ? '' : v)}
+            >
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="选择用户" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">无</SelectItem>
+                <SelectItem value="_none">无</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name}
@@ -323,12 +326,15 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
               <CheckCircle2 className="w-3.5 h-3.5" />
               审核者
             </Label>
-            <Select value={reviewer} onValueChange={setReviewer}>
+            <Select
+              value={reviewer || '_none'}
+              onValueChange={(v) => setReviewer(v === '_none' ? '' : v)}
+            >
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="选择用户" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">无</SelectItem>
+                <SelectItem value="_none">无</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.id}>
                     {user.name}
