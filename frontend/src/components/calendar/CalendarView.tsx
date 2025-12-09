@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { Task, TasksByStatus } from '@/types/task';
-import { startOfMonth, endOfMonth, eachDayOfInterval, format, getDay, isSameDay } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, getDay, isSameDay, addMonths, subMonths } from 'date-fns';
+import { getIcon } from '@/lib/iconMap';
 
 interface CalendarViewProps {
   tasks: TasksByStatus;
@@ -9,8 +10,13 @@ interface CalendarViewProps {
 
 export default function CalendarView({ tasks, onTaskClick }: CalendarViewProps) {
   const today = new Date();
-  const monthStart = startOfMonth(today);
-  const monthEnd = endOfMonth(today);
+  const [currentDate, setCurrentDate] = useState(today);
+
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+
+  const ChevronLeft = getIcon('chevron_right'); // Will flip with transform
+  const ChevronRight = getIcon('chevron_right');
 
   // Generate all days in the current month
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -46,9 +52,42 @@ export default function CalendarView({ tasks, onTaskClick }: CalendarViewProps) 
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  const goToPreviousMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const goToToday = () => setCurrentDate(today);
+
   return (
     <div className="flex-1 p-6 bg-gray-50/30 overflow-auto">
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
+        {/* Calendar Header - Navigation */}
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {format(currentDate, 'MMMM yyyy')}
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToToday}
+              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+            >
+              Today
+            </button>
+            <button
+              onClick={goToPreviousMonth}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="h-5 w-5 rotate-180" />
+            </button>
+            <button
+              onClick={goToNextMonth}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              aria-label="Next month"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
         {/* Calendar Grid */}
         <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden flex-1">
           {/* Week Day Headers */}
