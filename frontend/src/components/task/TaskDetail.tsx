@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { X, Calendar, User, Users, Flag, Folder, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, Calendar, User, Users, Flag, Folder, Clock, CheckCircle2, ArrowRight, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,11 +14,11 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useUserContext } from '@/context/UserContext';
+import { useTaskContext } from '@/context/TaskContext';
 import { useTaskOperations } from '@/hooks/useTaskOperations';
 import MarkdownRenderer from './MarkdownRenderer';
 import SubtaskList from './SubtaskList';
 import type { Task, TaskStatus, TaskPriority } from '@/types/task';
-import type { Subtask } from './SubtaskList';
 import { PRIORITY_COLORS } from '@/types/task';
 
 interface TaskDetailProps {
@@ -29,6 +29,7 @@ interface TaskDetailProps {
 
 function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   const { roles, users } = useUserContext();
+  const { getSubtasks, createTask, getTaskById } = useTaskContext();
   const { updateTask, moveToBoard, changeStatus } = useTaskOperations();
 
   // Local state for editing
@@ -41,14 +42,13 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   const [reviewer, setReviewer] = useState(task.reviewer || '');
   const [collaborator, setCollaborator] = useState(task.collaborator || '');
   const [project, setProject] = useState(task.project || '');
-  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Parse subtasks from body on initial load
-  useEffect(() => {
-    const parsed = parseSubtasksFromBody(task.body);
-    setSubtasks(parsed);
-  }, [task.body]);
+  // Get subtasks for current task
+  const subtasks = getSubtasks(task.id);
+
+  // Get parent task if this is a subtask
+  const parentTask = task.parent_id ? getTaskById(task.parent_id) : undefined;
 
   // Update local state when task changes
   useEffect(() => {
@@ -61,55 +61,15 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
     setReviewer(task.reviewer || '');
     setCollaborator(task.collaborator || '');
     setProject(task.project || '');
+    setIsEditing(false);
   }, [task]);
-
-  // Parse subtasks from markdown body
-  function parseSubtasksFromBody(bodyText: string): Subtask[] {
-    const subtaskRegex = /^- \[([ x])\] (.+?)(?:\((.+?)\))?$/gm;
-    const results: Subtask[] = [];
-    let match;
-
-    while ((match = subtaskRegex.exec(bodyText)) !== null) {
-      results.push({
-        id: `subtask-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        completed: match[1] === 'x',
-        title: match[2].trim(),
-        link: match[3],
-      });
-    }
-
-    return results;
-  }
-
-  // Convert subtasks back to markdown format
-  function subtasksToMarkdown(subtaskList: Subtask[]): string {
-    return subtaskList
-      .map((st) => {
-        const checkbox = st.completed ? '[x]' : '[ ]';
-        const link = st.link ? `(${st.link})` : '';
-        return `- ${checkbox} ${st.title}${link}`;
-      })
-      .join('\n');
-  }
-
-  // Remove subtasks section from body for separate rendering
-  function getBodyWithoutSubtasks(bodyText: string): string {
-    return bodyText.replace(/^- \[[ x]\] .+$/gm, '').trim();
-  }
 
   // Save changes
   const handleSave = () => {
-    // Reconstruct body with updated subtasks
-    const bodyWithoutSubtasks = getBodyWithoutSubtasks(body);
-    const subtasksMarkdown = subtasksToMarkdown(subtasks);
-    const newBody = subtasksMarkdown
-      ? `${bodyWithoutSubtasks}\n\n${subtasksMarkdown}`
-      : bodyWithoutSubtasks;
-
     const updatedTask: Task = {
       ...task,
       title,
-      body: newBody,
+      body,
       priority,
       priorityColor: PRIORITY_COLORS[priority],
       role_owner: roleOwner,
@@ -152,10 +112,23 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
     changeStatus(task, newStatus);
   };
 
-  // Handle subtask changes
-  const handleSubtasksChange = (newSubtasks: Subtask[]) => {
-    setSubtasks(newSubtasks);
-    setIsEditing(true);
+  // Handle adding a new subtask (creates a new task with parent_id)
+  const handleAddSubtask = (subtaskTitle: string) => {
+    createTask(subtaskTitle, '', task.id);
+  };
+
+  // Handle clicking on a subtask (navigate to it)
+  const handleSubtaskClick = (subtask: Task) => {
+    if (onTaskClick) {
+      onTaskClick(subtask.id);
+    }
+  };
+
+  // Handle clicking on parent task link
+  const handleParentClick = () => {
+    if (parentTask && onTaskClick) {
+      onTaskClick(parentTask.id);
+    }
   };
 
   const isInbox = task.status === 'inbox';
@@ -189,6 +162,19 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
           <X className="w-5 h-5" />
         </Button>
       </div>
+
+      {/* Parent task link (if this is a subtask) */}
+      {parentTask && (
+        <div
+          className="flex items-center gap-2 px-4 py-2 bg-blue-50 border-b border-blue-100 cursor-pointer hover:bg-blue-100 transition-colors"
+          onClick={handleParentClick}
+        >
+          <Link2 className="w-4 h-4 text-blue-500" />
+          <span className="text-sm text-blue-600">
+            父任务: <span className="font-mono">{parentTask.id}</span> - {parentTask.title}
+          </span>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -379,10 +365,11 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
 
         <Separator />
 
-        {/* Subtasks */}
+        {/* Subtasks - now using real Task data */}
         <SubtaskList
           subtasks={subtasks}
-          onChange={handleSubtasksChange}
+          onAddSubtask={handleAddSubtask}
+          onSubtaskClick={handleSubtaskClick}
           readonly={task.status === 'done'}
         />
 
@@ -393,7 +380,7 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
           <Label className="text-xs text-gray-500">描述</Label>
           {isEditing ? (
             <Textarea
-              value={getBodyWithoutSubtasks(body)}
+              value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="任务描述（支持 Markdown）..."
               className="min-h-[150px] font-mono text-sm"
@@ -403,9 +390,9 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
               className="min-h-[100px] p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() => setIsEditing(true)}
             >
-              {getBodyWithoutSubtasks(body) ? (
+              {body ? (
                 <MarkdownRenderer
-                  content={getBodyWithoutSubtasks(body)}
+                  content={body}
                   onTaskClick={onTaskClick}
                 />
               ) : (

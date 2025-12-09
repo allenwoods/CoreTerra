@@ -14,9 +14,13 @@ interface TaskContextType {
   // Task operations
   setSelectedTask: (task: Task | null) => void;
   updateTask: (task: Task, logMessage: string) => void;
-  createTask: (title: string, body?: string) => void;
+  createTask: (title: string, body?: string, parentId?: string) => void;
   deleteTask: (taskId: string) => void;
   setFilterText: (text: string) => void;
+
+  // Subtask queries
+  getSubtasks: (parentId: string) => Task[];
+  getTaskById: (taskId: string) => Task | undefined;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -63,8 +67,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setSelectedTask(updatedTask);
   }, []);
 
-  // Create a new task
-  const createTask = useCallback((title: string, body: string = '') => {
+  // Create a new task (optionally as a subtask if parentId is provided)
+  const createTask = useCallback((title: string, body: string = '', parentId?: string) => {
     const id = 'CT-' + Math.floor(100 + Math.random() * 900);
 
     const newTask: Task = {
@@ -81,6 +85,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
       timestamp_capture: new Date().toISOString(),
       body,
       assignee: { initial: '?', color: 'bg-gray-400', name: 'Unassigned' },
+      parent_id: parentId,
     };
 
     setTasks((prev) => ({
@@ -89,7 +94,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
     }));
 
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-    setActivityLog((prev) => [`[${timestamp}] Created Task #${id}: '${title}'`, ...prev]);
+    const parentInfo = parentId ? ` (subtask of #${parentId})` : '';
+    setActivityLog((prev) => [`[${timestamp}] Created Task #${id}: '${title}'${parentInfo}`, ...prev]);
   }, []);
 
   // Delete a task
@@ -118,6 +124,34 @@ export function TaskProvider({ children }: TaskProviderProps) {
     }
   }, [selectedTask]);
 
+  // Get all subtasks for a given parent task
+  const getSubtasks = useCallback(
+    (parentId: string): Task[] => {
+      const allTasks = [
+        ...tasks.inbox,
+        ...tasks.next,
+        ...tasks.waiting,
+        ...tasks.done,
+      ];
+      return allTasks.filter((t) => t.parent_id === parentId);
+    },
+    [tasks]
+  );
+
+  // Get a task by ID
+  const getTaskById = useCallback(
+    (taskId: string): Task | undefined => {
+      const allTasks = [
+        ...tasks.inbox,
+        ...tasks.next,
+        ...tasks.waiting,
+        ...tasks.done,
+      ];
+      return allTasks.find((t) => t.id === taskId);
+    },
+    [tasks]
+  );
+
   const value: TaskContextType = {
     tasks,
     selectedTask,
@@ -128,6 +162,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
     createTask,
     deleteTask,
     setFilterText,
+    getSubtasks,
+    getTaskById,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

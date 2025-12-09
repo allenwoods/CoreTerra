@@ -22,14 +22,9 @@ export interface Task {
   timestamp_commitment?: string; // ISO 8601 datetime string
   timestamp_completion?: string; // ISO 8601 datetime string
   project?: string;
-  body: string; // Markdown content
+  body: string; // Markdown content (without subtask checklist - subtasks are separate tasks)
   assignee?: Assignee;
-}
-
-export interface Subtask {
-  checked: boolean;
-  title: string;
-  link: string;
+  parent_id?: string; // If set, this task is a subtask of the parent task
 }
 
 // Helper type for tasks grouped by status

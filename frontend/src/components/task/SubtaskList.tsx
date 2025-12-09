@@ -1,51 +1,44 @@
 import { useState, memo } from 'react';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, ExternalLink, Circle, CheckCircle2, Clock, Play } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-
-export interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-  link?: string;
-}
+import { Badge } from '@/components/ui/badge';
+import type { Task } from '@/types/task';
+import { PRIORITY_COLORS } from '@/types/task';
 
 interface SubtaskListProps {
-  subtasks: Subtask[];
-  onChange: (subtasks: Subtask[]) => void;
+  subtasks: Task[];
+  onAddSubtask: (title: string) => void;
+  onSubtaskClick: (task: Task) => void;
   readonly?: boolean;
 }
 
-function SubtaskList({ subtasks, onChange, readonly = false }: SubtaskListProps) {
+const STATUS_ICONS: Record<string, React.ReactNode> = {
+  inbox: <Circle className="w-4 h-4 text-gray-400" />,
+  next: <Play className="w-4 h-4 text-blue-500" />,
+  waiting: <Clock className="w-4 h-4 text-yellow-500" />,
+  done: <CheckCircle2 className="w-4 h-4 text-green-500" />,
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  inbox: '待处理',
+  next: '进行中',
+  waiting: '等待中',
+  done: '已完成',
+};
+
+function SubtaskList({
+  subtasks,
+  onAddSubtask,
+  onSubtaskClick,
+  readonly = false,
+}: SubtaskListProps) {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-
-  const generateId = () => `subtask-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  const handleToggle = (id: string) => {
-    if (readonly) return;
-    const updated = subtasks.map((st) =>
-      st.id === id ? { ...st, completed: !st.completed } : st
-    );
-    onChange(updated);
-  };
 
   const handleAdd = () => {
     if (!newSubtaskTitle.trim() || readonly) return;
-    const newSubtask: Subtask = {
-      id: generateId(),
-      title: newSubtaskTitle.trim(),
-      completed: false,
-    };
-    onChange([...subtasks, newSubtask]);
+    onAddSubtask(newSubtaskTitle.trim());
     setNewSubtaskTitle('');
-  };
-
-  const handleDelete = (id: string) => {
-    if (readonly) return;
-    onChange(subtasks.filter((st) => st.id !== id));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -55,36 +48,7 @@ function SubtaskList({ subtasks, onChange, readonly = false }: SubtaskListProps)
     }
   };
 
-  const startEditing = (subtask: Subtask) => {
-    if (readonly) return;
-    setEditingId(subtask.id);
-    setEditTitle(subtask.title);
-  };
-
-  const saveEdit = () => {
-    if (!editTitle.trim()) {
-      setEditingId(null);
-      return;
-    }
-    const updated = subtasks.map((st) =>
-      st.id === editingId ? { ...st, title: editTitle.trim() } : st
-    );
-    onChange(updated);
-    setEditingId(null);
-    setEditTitle('');
-  };
-
-  const handleEditKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveEdit();
-    } else if (e.key === 'Escape') {
-      setEditingId(null);
-      setEditTitle('');
-    }
-  };
-
-  const completedCount = subtasks.filter((st) => st.completed).length;
+  const completedCount = subtasks.filter((st) => st.status === 'done').length;
   const totalCount = subtasks.length;
 
   return (
@@ -114,56 +78,36 @@ function SubtaskList({ subtasks, onChange, readonly = false }: SubtaskListProps)
         {subtasks.map((subtask) => (
           <div
             key={subtask.id}
-            className="group flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+            className="group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            onClick={() => onSubtaskClick(subtask)}
           >
-            {!readonly && (
-              <GripVertical className="w-4 h-4 text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab" />
-            )}
-            <Checkbox
-              checked={subtask.completed}
-              onCheckedChange={() => handleToggle(subtask.id)}
-              disabled={readonly}
-              className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-            />
-            {editingId === subtask.id ? (
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={saveEdit}
-                onKeyDown={handleEditKeyDown}
-                className="flex-1 h-7 text-sm"
-                autoFocus
-              />
-            ) : (
-              <span
-                className={`flex-1 text-sm cursor-pointer ${
-                  subtask.completed ? 'text-gray-400 line-through' : 'text-gray-700'
-                }`}
-                onClick={() => startEditing(subtask)}
-              >
-                {subtask.title}
-              </span>
-            )}
-            {subtask.link && (
-              <a
-                href={subtask.link}
-                className="text-xs text-blue-500 hover:text-blue-700"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                链接
-              </a>
-            )}
-            {!readonly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"
-                onClick={() => handleDelete(subtask.id)}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            )}
+            {/* Status icon */}
+            {STATUS_ICONS[subtask.status]}
+
+            {/* Task ID */}
+            <span className="text-xs font-mono text-gray-400">{subtask.id}</span>
+
+            {/* Title */}
+            <span
+              className={`flex-1 text-sm truncate ${
+                subtask.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-700'
+              }`}
+            >
+              {subtask.title}
+            </span>
+
+            {/* Priority badge */}
+            <Badge className={`${PRIORITY_COLORS[subtask.priority]} text-xs`}>
+              {subtask.priority.toUpperCase()}
+            </Badge>
+
+            {/* Status label */}
+            <span className="text-xs text-gray-400 w-16 text-right">
+              {STATUS_LABELS[subtask.status]}
+            </span>
+
+            {/* Open in new panel indicator */}
+            <ExternalLink className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100" />
           </div>
         ))}
       </div>
@@ -176,7 +120,7 @@ function SubtaskList({ subtasks, onChange, readonly = false }: SubtaskListProps)
             value={newSubtaskTitle}
             onChange={(e) => setNewSubtaskTitle(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="添加子任务..."
+            placeholder="添加子任务（将创建新任务并进入收件箱）..."
             className="flex-1 h-8 text-sm border-dashed"
           />
           <Button
@@ -192,8 +136,10 @@ function SubtaskList({ subtasks, onChange, readonly = false }: SubtaskListProps)
       )}
 
       {/* Empty state */}
-      {subtasks.length === 0 && readonly && (
-        <p className="text-sm text-gray-400 italic">暂无子任务</p>
+      {subtasks.length === 0 && (
+        <p className="text-sm text-gray-400 italic py-2">
+          {readonly ? '暂无子任务' : '添加子任务将创建新任务并自动进入收件箱'}
+        </p>
       )}
     </div>
   );
