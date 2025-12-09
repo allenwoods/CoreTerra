@@ -1,16 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { TaskProvider, useTaskContext } from '@/context/TaskContext';
+import { UserProvider } from '@/context/UserContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import KanbanPage from '@/pages/KanbanPage';
 import InboxPage from '@/pages/InboxPage';
 
-function App() {
+function AppRoutes() {
+  const { createTask } = useTaskContext();
+
   const handleUserClick = () => {
     console.log('User clicked - UserProfileModal will be implemented in Phase 8');
   };
 
   const handleQuickAdd = (title: string) => {
-    console.log('Quick add task:', title);
-    // Task creation will be implemented in Phase 7
+    createTask(title);
   };
 
   const handleCreateFull = () => {
@@ -19,22 +22,32 @@ function App() {
   };
 
   return (
+    <Routes>
+      <Route
+        element={
+          <DashboardLayout
+            onUserClick={handleUserClick}
+            onQuickAdd={handleQuickAdd}
+            onCreateFull={handleCreateFull}
+          />
+        }
+      >
+        <Route path="/" element={<KanbanPage />} />
+        <Route path="/inbox" element={<InboxPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          element={
-            <DashboardLayout
-              onUserClick={handleUserClick}
-              onQuickAdd={handleQuickAdd}
-              onCreateFull={handleCreateFull}
-            />
-          }
-        >
-          <Route path="/" element={<KanbanPage />} />
-          <Route path="/inbox" element={<InboxPage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <UserProvider>
+        <TaskProvider>
+          <AppRoutes />
+        </TaskProvider>
+      </UserProvider>
     </BrowserRouter>
   );
 }

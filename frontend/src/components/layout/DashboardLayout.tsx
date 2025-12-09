@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import InfoPanel from './InfoPanel';
 import QuickAddBar from './QuickAddBar';
 import { getIcon } from '@/lib/iconMap';
-import { initialLogs } from '@/lib/mockData';
+import { useTaskContext } from '@/context/TaskContext';
 
 interface DashboardLayoutProps {
   onUserClick?: () => void;
@@ -18,7 +18,7 @@ export default function DashboardLayout({
   onCreateFull,
 }: DashboardLayoutProps) {
   const [infoPanelOpen, setInfoPanelOpen] = useState(true);
-  const [logs] = useState(initialLogs);
+  const { activityLog } = useTaskContext();
   const PanelLeftIcon = getIcon('dock_to_left');
 
   return (
@@ -46,7 +46,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Right Info Panel */}
-          <InfoPanel logs={logs} visible={infoPanelOpen} onToggle={() => setInfoPanelOpen(!infoPanelOpen)} />
+          <InfoPanel logs={activityLog} visible={infoPanelOpen} onToggle={() => setInfoPanelOpen(!infoPanelOpen)} />
         </div>
 
         {/* Bottom Quick Add Bar */}
