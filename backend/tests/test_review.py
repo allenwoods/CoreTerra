@@ -1,17 +1,27 @@
 import pytest
+from src.schemas import TaskType, Priority
 
 def test_review_establishes_priority_hierarchy(client, temp_workspace):
     """
     WHY: Review is about relative importance. We verify that priority settings correctly
     differentiate tasks, enabling effective triage.
     """
+    user_uuid = "00000000-0000-0000-0000-000000000123"
     # Create two tasks
-    t1 = client.post("/tasks/", json={"title": "Low Prio", "user_id": "u1"}).json()
-    t2 = client.post("/tasks/", json={"title": "High Prio", "user_id": "u1"}).json()
+    t1 = client.post("/tasks/", json={
+        "title": "Low Prio",
+        "user_id": user_uuid,
+        "type": TaskType.CAPTURE
+    }).json()
+    t2 = client.post("/tasks/", json={
+        "title": "High Prio",
+        "user_id": user_uuid,
+        "type": TaskType.CAPTURE
+    }).json()
 
     # Set Priorities
-    client.patch(f"/tasks/{t1['id']}", json={"priority": 1, "updated_at": t1["updated_at"]})
-    client.patch(f"/tasks/{t2['id']}", json={"priority": 5, "updated_at": t2["updated_at"]})
+    client.patch(f"/tasks/{t1['id']}", json={"priority": Priority.P1, "updated_at": t1["updated_at"]})
+    client.patch(f"/tasks/{t2['id']}", json={"priority": Priority.P5, "updated_at": t2["updated_at"]})
 
     # Fetch list sorted by priority
     resp = client.get("/tasks/?sort_by=priority&order=desc") # Assuming API supports sort
@@ -31,7 +41,12 @@ def test_review_creates_commitment(client, temp_workspace):
     """
     WHY: A committed task must have a target date (due_date) to measure reliability (CAR).
     """
-    t = client.post("/tasks/", json={"title": "Commitment Test", "user_id": "u1"}).json()
+    user_uuid = "00000000-0000-0000-0000-000000000123"
+    t = client.post("/tasks/", json={
+        "title": "Commitment Test",
+        "user_id": user_uuid,
+        "type": TaskType.CAPTURE
+    }).json()
 
     # Commit to a date
     due_date = "2023-12-31T23:59:59Z"

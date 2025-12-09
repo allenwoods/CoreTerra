@@ -1,17 +1,20 @@
 import pytest
-from tests.schemas import TaskCreateRequest
+from src.schemas import TaskCreateRequest, TaskType, Priority
 
 def test_capture_generates_unique_identity(client, temp_workspace):
     """
-    WHY: Verify that every captured task has a unique identity (ct_id).
+    WHY: Verify that every captured task has a unique identity (task_id).
     We test this by creating two identical tasks and ensuring their IDs differ.
     """
+    # Using explicit UUID for user_id as per new schema
+    user_uuid = "00000000-0000-0000-0000-000000000123"
+
     payload = TaskCreateRequest(
         title="Same Idea",
-        user_id="user1",
+        user_id=user_uuid,
         body="Content",
-        type="Capture"
-    ).model_dump()
+        type=TaskType.CAPTURE
+    ).model_dump(mode='json')
 
     # Capture first task
     resp1 = client.post("/tasks/", json=payload)
@@ -24,23 +27,31 @@ def test_capture_generates_unique_identity(client, temp_workspace):
     task2 = resp2.json()
 
     # The WHY test: Uniqueness of identity
-    assert task1["id"] != task2["id"], "Each captured task must have a unique global identifier (ct_id)"
+    # Note: API response aliases task_id to id
+    assert task1["id"] != task2["id"], "Each captured task must have a unique global identifier (task_id)"
 
 def test_capture_establishes_timeline(client, temp_workspace):
     """
     WHY: Verify that capturing a task establishes its point of origin in time.
     This is critical for calculating PQI (Planning Quality Index) later.
     """
+    user_uuid = "00000000-0000-0000-0000-000000000123"
     payload = TaskCreateRequest(
         title="Timeline Test",
-        user_id="user1",
-        type="Capture"
-    ).model_dump()
+        user_id=user_uuid,
+        type=TaskType.CAPTURE
+    ).model_dump(mode='json')
 
     resp = client.post("/tasks/", json=payload)
     assert resp.status_code == 201
     task = resp.json()
 
     # The WHY test: Existence of a valid timeline origin
-    assert task["created_at"] is not None, "Captured task must have a timestamp to serve as the baseline for PQI metrics"
+    # API response maps capture_timestamp to created_at (or we check both if exposed)
+    # The schema aliases it? In schema TaskMetadataResponse, created_at is aliased to capture_timestamp?
+    # Let's check schema: `capture_timestamp` is in Base. Response inherits Base.
+    # Response adds `task_id`.
+    # It does NOT alias capture_timestamp to created_at in the new schema I wrote.
+    # It has `capture_timestamp`.
+    assert task["capture_timestamp"] is not None, "Captured task must have a timestamp to serve as the baseline for PQI metrics"
     assert task["status"] == "inbox", "Newly captured tasks must land in Inbox to await processing"

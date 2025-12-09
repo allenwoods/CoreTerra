@@ -1,17 +1,20 @@
 import pytest
-from tests.schemas import TaskCreateRequest
+from src.schemas import TaskCreateRequest, TaskType
 
 def test_clarify_preserves_identity_while_enriching_context(client, seeded_workspace):
     """
     WHY: Clarification should add context (details, tags) without altering the task's fundamental identity or origin.
     """
+    user_uuid = "00000000-0000-0000-0000-000000000123"
     # Load existing task (simulating a task picked from inbox)
-    # We use a known ID from fixtures or create one if needed.
-    # Let's create one fresh to be sure.
-    create_res = client.post("/tasks/", json={"title": "Vague Idea", "user_id": "u1", "type": "Capture"})
+    create_res = client.post("/tasks/", json={
+        "title": "Vague Idea",
+        "user_id": user_uuid,
+        "type": TaskType.CAPTURE
+    })
     task = create_res.json()
     original_id = task["id"]
-    original_created_at = task["created_at"]
+    original_timestamp = task["capture_timestamp"]
 
     # The Clarify Action: Adding details
     patch_payload = {
@@ -26,7 +29,7 @@ def test_clarify_preserves_identity_while_enriching_context(client, seeded_works
 
     # WHY: Identity and Origin must remain immutable
     assert updated_task["id"] == original_id, "Clarification must not change the task identity"
-    assert updated_task["created_at"] == original_created_at, "Clarification must preserve the original capture timestamp"
+    assert updated_task["capture_timestamp"] == original_timestamp, "Clarification must preserve the original capture timestamp"
 
     # WHY: Content must be enriched
     assert updated_task["title"] != task["title"], "Clarification should refine the definition of the task"
@@ -38,8 +41,9 @@ def test_clarify_enforces_optimistic_locking(client, temp_workspace):
     If User B tries to update a task based on a version that User A has already superseded,
     the system must reject User B's update to force a re-read.
     """
+    user_uuid = "00000000-0000-0000-0000-000000000123"
     # 1. Setup: Create a task
-    t = client.post("/tasks/", json={"title": "Shared Task", "user_id": "u1"}).json()
+    t = client.post("/tasks/", json={"title": "Shared Task", "user_id": user_uuid, "type": TaskType.CAPTURE}).json()
     task_id = t["id"]
     original_version = t["updated_at"]
 
