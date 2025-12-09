@@ -103,14 +103,15 @@ echo ""
 print_status "Setting up backend dependencies..."
 cd backend
 
-# Check if dependencies are already installed by looking for fastapi
-if ! uv pip list 2>/dev/null | grep -q "fastapi"; then
-    print_status "Installing Python dependencies with uv..."
-    uv pip install -e .
-    print_success "Backend dependencies installed"
-else
-    print_status "Backend dependencies already installed, skipping..."
-fi
+# Use uv sync to install dependencies and create/update virtual environment
+# uv sync automatically:
+# - Creates a .venv directory if it doesn't exist
+# - Installs all dependencies from pyproject.toml
+# - Keeps dependencies in sync with the lock file
+print_status "Running uv sync to install/update Python dependencies..."
+uv sync
+
+print_success "Backend dependencies installed/synced"
 
 cd ..
 echo ""
