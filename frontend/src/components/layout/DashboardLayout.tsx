@@ -9,7 +9,7 @@ import { useTaskContext } from '@/context/TaskContext';
 interface DashboardLayoutProps {
   onUserClick?: () => void;
   onQuickAdd?: (title: string) => void;
-  onCreateFull?: () => void;
+  onCreateFull?: (initialTitle?: string) => void;
 }
 
 export default function DashboardLayout({
