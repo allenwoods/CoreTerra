@@ -1,17 +1,18 @@
 import pytest
+import uuid
 from src.schemas import TaskCreateRequest, TaskType, Priority
+
+# Use a valid UUIDv4 for testing
+TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
 def test_capture_generates_unique_identity(client, temp_workspace):
     """
     WHY: Verify that every captured task has a unique identity (task_id).
     We test this by creating two identical tasks and ensuring their IDs differ.
     """
-    # Using explicit UUID for user_id as per new schema
-    user_uuid = "00000000-0000-0000-0000-000000000123"
-
     payload = TaskCreateRequest(
         title="Same Idea",
-        user_id=user_uuid,
+        user_id=TEST_USER_ID,
         body="Content",
         type=TaskType.CAPTURE
     ).model_dump(mode='json')
@@ -35,10 +36,9 @@ def test_capture_establishes_timeline(client, temp_workspace):
     WHY: Verify that capturing a task establishes its point of origin in time.
     This is critical for calculating PQI (Planning Quality Index) later.
     """
-    user_uuid = "00000000-0000-0000-0000-000000000123"
     payload = TaskCreateRequest(
         title="Timeline Test",
-        user_id=user_uuid,
+        user_id=TEST_USER_ID,
         type=TaskType.CAPTURE
     ).model_dump(mode='json')
 
