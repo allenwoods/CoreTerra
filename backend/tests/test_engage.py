@@ -23,7 +23,7 @@ def test_engage_verifies_causality(client, temp_workspace):
     completed = resp.json()
 
     created_at = datetime.fromisoformat(completed["capture_timestamp"].replace('Z', '+00:00'))
-    completed_at = datetime.fromisoformat(completed["completed_at"].replace('Z', '+00:00'))
+    completed_at = datetime.fromisoformat(completed["completion_timestamp"].replace('Z', '+00:00'))
 
     # WHY: Causality
     assert completed_at > created_at, "Task cannot be completed before it is created"
@@ -49,4 +49,4 @@ def test_engage_generates_reliable_signal(client, temp_workspace):
     # WHY: Signal integrity
     assert resp.status_code == 200
     assert resp.json()["status"] == "completed"
-    assert resp.json()["completed_at"] is not None, "Completion event must be timestamped to calculate CAR"
+    assert resp.json()["completion_timestamp"] is not None, "Completion event must be timestamped to calculate CAR"

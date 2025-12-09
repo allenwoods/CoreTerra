@@ -47,11 +47,5 @@ def test_capture_establishes_timeline(client, temp_workspace):
     task = resp.json()
 
     # The WHY test: Existence of a valid timeline origin
-    # API response maps capture_timestamp to created_at (or we check both if exposed)
-    # The schema aliases it? In schema TaskMetadataResponse, created_at is aliased to capture_timestamp?
-    # Let's check schema: `capture_timestamp` is in Base. Response inherits Base.
-    # Response adds `task_id`.
-    # It does NOT alias capture_timestamp to created_at in the new schema I wrote.
-    # It has `capture_timestamp`.
     assert task["capture_timestamp"] is not None, "Captured task must have a timestamp to serve as the baseline for PQI metrics"
     assert task["status"] == "inbox", "Newly captured tasks must land in Inbox to await processing"

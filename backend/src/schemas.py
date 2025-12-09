@@ -38,9 +38,11 @@ class User(BaseModel):
     username: str
     email: str
     roles: List[Role]
+    body: Optional[str] = None # Added body to support MyST markdown mapping
 
 class TaskMetadataBase(BaseModel):
     """Task metadata base model, mapping to MyST frontmatter."""
+    task_id: UUID4 # Explicitly requested field for ID
     title: str
     status: Status
     priority: Priority
@@ -50,13 +52,13 @@ class TaskMetadataBase(BaseModel):
     parent_id: Optional[UUID4] = None
     role_owner: Optional[Role] = None
     type: Optional[TaskType] = None
-    capture_timestamp: datetime
+    capture_timestamp: datetime # Renamed from timestamp_capture as requested
+    completion_timestamp: Optional[datetime] = None # Renamed from timestamp_completion for consistency
     updated_at: datetime
 
 class TaskMetadataResponse(TaskMetadataBase):
     """Task response model including system-generated metadata."""
-    task_id: UUID4 = Field(alias="id")
-    completed_at: Optional[datetime] = None
+    id: UUID4 = Field(validation_alias="task_id") # Map task_id to id for API response if needed, or just expose task_id
 
     class Config:
         populate_by_name = True
