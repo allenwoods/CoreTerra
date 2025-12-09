@@ -1,0 +1,201 @@
+import os
+import sqlite3
+import frontmatter
+from datetime import datetime
+from uuid import UUID
+from typing import List, Optional, Any, Dict
+from git import Repo, Actor
+from src.schemas import TaskMetadataBase, Status, Priority, Role, TaskType, TaskMetadataResponse, TaskFullResponse
+from src.users import get_git_author
+import json
+
+# Helper to get paths dynamically
+def _get_paths():
+    data_dir = os.getenv("CORETERRA_DATA_DIR", "/tmp/coreterra-data")
+    db_path = os.getenv("CORETERRA_DB_PATH", os.path.join(data_dir, "coreterra.db"))
+    return data_dir, db_path
+
+def _get_db_connection():
+    """Establishes a connection to the SQLite database."""
+    data_dir, db_path = _get_paths()
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    """Initializes the SQLite database schema."""
+    conn = _get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            ct_id TEXT PRIMARY KEY,
+            status TEXT,
+            priority TEXT,
+            role_owner TEXT,
+            timestamp_capture TEXT,
+            timestamp_commitment TEXT,
+            timestamp_completion TEXT,
+            due_date TEXT,
+            updated_at TEXT,
+            title TEXT,
+            user_id TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def _get_repo() -> Repo:
+    """Gets or initializes the Git repository."""
+    data_dir, _ = _get_paths()
+    os.makedirs(data_dir, exist_ok=True)
+    try:
+        repo = Repo(data_dir)
+    except Exception:
+        repo = Repo.init(data_dir)
+        # Configure local user if not present (fallback)
+        if not repo.config_reader().has_option("user", "email"):
+            repo.config_writer().set_value("user", "name", "System").release()
+            repo.config_writer().set_value("user", "email", "system@coreterra.io").release()
+    return repo
+
+def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_message: str) -> TaskMetadataResponse:
+    """
+    Saves a task:
+    1. Writes MyST file.
+    2. Commits to Git.
+    3. Updates SQLite index.
+    """
+    data_dir, _ = _get_paths()
+    repo = _get_repo()
+    file_path = os.path.join(data_dir, f"{task_id}.md")
+
+    # 1. Write MyST file
+    post = frontmatter.Post(body)
+    # Convert Pydantic model to dict, excluding None to keep frontmatter clean
+    meta_dict = metadata.model_dump(exclude_none=True, mode='json')
+    # Filter out body from metadata if it slipped in
+    if 'body' in meta_dict:
+        del meta_dict['body']
+
+    post.metadata = meta_dict
+
+    with open(file_path, "wb") as f:
+        frontmatter.dump(post, f)
+
+    # 2. Git Commit
+    repo.index.add([file_path])
+
+    author = None
+    if metadata.user_id:
+        user_info = get_git_author(metadata.user_id)
+        if user_info:
+            author = Actor(user_info[0], user_info[1])
+
+    repo.index.commit(commit_message, author=author, committer=author)
+
+    # 3. Update SQLite
+    conn = _get_db_connection()
+    cursor = conn.cursor()
+
+    # Prepare data for SQL
+    sql_data = {
+        "ct_id": str(task_id),
+        "status": metadata.status.value,
+        "priority": metadata.priority.value if metadata.priority else None,
+        "role_owner": metadata.role_owner.value if metadata.role_owner else None,
+        "timestamp_capture": metadata.capture_timestamp.isoformat() if metadata.capture_timestamp else None,
+        "timestamp_commitment": metadata.commitment_timestamp.isoformat() if metadata.commitment_timestamp else None,
+        "timestamp_completion": metadata.completion_timestamp.isoformat() if metadata.completion_timestamp else None,
+        "due_date": metadata.due_date.isoformat() if metadata.due_date else None,
+        "updated_at": metadata.updated_at.isoformat(),
+        "title": metadata.title,
+        "user_id": str(metadata.user_id)
+    }
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO tasks (
+            ct_id, status, priority, role_owner, timestamp_capture,
+            timestamp_commitment, timestamp_completion, due_date, updated_at, title, user_id
+        ) VALUES (
+            :ct_id, :status, :priority, :role_owner, :timestamp_capture,
+            :timestamp_commitment, :timestamp_completion, :due_date, :updated_at, :title, :user_id
+        )
+    """, sql_data)
+
+    conn.commit()
+    conn.close()
+
+    return TaskMetadataResponse(**meta_dict)
+
+def get_task(task_id: UUID) -> Optional[TaskFullResponse]:
+    """Retrieves a task from file system."""
+    data_dir, _ = _get_paths()
+    file_path = os.path.join(data_dir, f"{task_id}.md")
+    if not os.path.exists(file_path):
+        return None
+
+    post = frontmatter.load(file_path)
+
+    # Reconstruct Pydantic model
+    try:
+        # We need to ensure required fields are present.
+        # If file is corrupted or missing fields, this might fail.
+        # Ideally we read from SQLite for metadata speed, but file is Source of Truth.
+        return TaskFullResponse(**post.metadata, body=post.content)
+    except Exception as e:
+        print(f"Error parsing task {task_id}: {e}")
+        return None
+
+def list_tasks(filters: Dict[str, Any] = None, sort_by: str = None, order: str = "asc") -> List[TaskMetadataResponse]:
+    """Lists tasks from SQLite index."""
+    conn = _get_db_connection()
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM tasks"
+    params = []
+
+    if filters:
+        conditions = []
+        for key, value in filters.items():
+            if value is not None:
+                conditions.append(f"{key} = ?")
+                params.append(value)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+    if sort_by:
+        # Prevent SQL injection for sort_by since it can't be parameterized
+        # Allowlist of columns
+        allowed_cols = ["priority", "due_date", "created_at", "updated_at", "timestamp_capture"]
+        if sort_by in allowed_cols:
+             if order.lower() not in ["asc", "desc"]:
+                 order = "asc"
+             query += f" ORDER BY {sort_by} {order}"
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    tasks = []
+    for row in rows:
+        # Map SQLite row back to Pydantic model
+        # Note: some fields might need type conversion if not handled by Pydantic automatically from strings
+        # Pydantic is good at parsing ISO strings to datetime
+        try:
+            task_dict = dict(row)
+            # remap keys if needed, e.g. ct_id -> task_id
+            task_dict['task_id'] = task_dict.pop('ct_id')
+
+            if 'timestamp_commitment' in task_dict:
+                task_dict['commitment_timestamp'] = task_dict.pop('timestamp_commitment')
+            if 'timestamp_capture' in task_dict:
+                task_dict['capture_timestamp'] = task_dict.pop('timestamp_capture')
+            if 'timestamp_completion' in task_dict:
+                task_dict['completion_timestamp'] = task_dict.pop('timestamp_completion')
+
+            tasks.append(TaskMetadataResponse(**task_dict))
+        except Exception as e:
+            print(f"Skipping invalid row: {e}")
+
+    conn.close()
+    return tasks

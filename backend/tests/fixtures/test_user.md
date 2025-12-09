@@ -1,7 +1,8 @@
 ---
-user_id: "00000000-0000-0000-0000-000000000123"
-username: "testuser"
-email: "test@example.com"
-roles: ["backend-engineer"]
+user_id: 550e8400-e29b-41d4-a716-446655440001
+username: testuser
+email: test@example.com
+roles:
+  - backend-engineer
 ---
-User profile for testuser.
+Test User Bio

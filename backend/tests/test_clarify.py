@@ -1,15 +1,18 @@
 import pytest
 from src.schemas import TaskCreateRequest, TaskType
+from uuid import uuid4
+
+# Use valid UUID for testing
+TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
 def test_clarify_preserves_identity_while_enriching_context(client, seeded_workspace):
     """
     WHY: Clarification should add context (details, tags) without altering the task's fundamental identity or origin.
     """
-    user_uuid = "00000000-0000-0000-0000-000000000123"
     # Load existing task (simulating a task picked from inbox)
     create_res = client.post("/tasks/", json={
         "title": "Vague Idea",
-        "user_id": user_uuid,
+        "user_id": TEST_USER_ID,
         "type": TaskType.CAPTURE
     })
     task = create_res.json()
@@ -41,9 +44,8 @@ def test_clarify_enforces_optimistic_locking(client, temp_workspace):
     If User B tries to update a task based on a version that User A has already superseded,
     the system must reject User B's update to force a re-read.
     """
-    user_uuid = "00000000-0000-0000-0000-000000000123"
     # 1. Setup: Create a task
-    t = client.post("/tasks/", json={"title": "Shared Task", "user_id": user_uuid, "type": TaskType.CAPTURE}).json()
+    t = client.post("/tasks/", json={"title": "Shared Task", "user_id": TEST_USER_ID, "type": TaskType.CAPTURE}).json()
     task_id = t["id"]
     original_version = t["updated_at"]
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, UUID4
+from pydantic import BaseModel, Field, UUID4, ConfigDict
 
 class Status(str, Enum):
     INBOX = "inbox"
@@ -52,16 +52,17 @@ class TaskMetadataBase(BaseModel):
     parent_id: Optional[UUID4] = None
     role_owner: Optional[Role] = None
     type: Optional[TaskType] = None
-    capture_timestamp: datetime # Renamed from timestamp_capture as requested
-    completion_timestamp: Optional[datetime] = None # Renamed from timestamp_completion for consistency
+    capture_timestamp: datetime
+    commitment_timestamp: Optional[datetime] = None
+    completion_timestamp: Optional[datetime] = None
     updated_at: datetime
 
 class TaskMetadataResponse(TaskMetadataBase):
     """Task response model including system-generated metadata."""
+    model_config = ConfigDict(populate_by_name=True)
+
     id: UUID4 = Field(validation_alias="task_id") # Map task_id to id for API response if needed, or just expose task_id
 
-    class Config:
-        populate_by_name = True
 
 class TaskFullResponse(TaskMetadataResponse):
     """Full task response model including body."""
