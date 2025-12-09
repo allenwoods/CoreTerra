@@ -1,60 +1,36 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>CoreTerra Kanban Dashboard</title>
     
     <!-- External Libraries -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap" rel="stylesheet" />
-
-    <style>
-        .font-pixel-display { font-family: 'Press Start 2P', monospace; }
-        .font-pixel-body { font-family: 'VT323', monospace; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        body { overflow: hidden; } /* Prevent double scrollbars */
-
-        /* Pixel Art Scrollbar */
-        ::-webkit-scrollbar { width: 12px; height: 12px; }
-        ::-webkit-scrollbar-track { background: #111; border-left: 2px solid #333; }
-        ::-webkit-scrollbar-thumb { background: #444; border: 2px solid #111; box-shadow: inset -2px -2px 0px #222, inset 2px 2px 0px #666; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* Custom Pixel Borders */
-        .pixel-border {
-            box-shadow:
-                -2px 0 0 0 #2a2a2a,
-                2px 0 0 0 #2a2a2a,
-                0 -2px 0 0 #2a2a2a,
-                0 2px 0 0 #2a2a2a;
-            margin: 2px;
-        }
-    </style>
+    <!-- Tailwind Configuration Must Be Loaded Before Tailwind Script -->
     <script id="tailwind-config">
       tailwind.config = {
-        darkMode: "class",
         theme: {
           extend: {
             colors: {
-              "primary": "#137fec",
-              "background-light": "#f6f7f8",
-              "background-dark": "#111111",
-              "retro-black": "#0c0c0c",
-              "retro-gray": "#1f1f1f",
+              "primary": "#2563eb", // blue-600
+              "primary-hover": "#1d4ed8", // blue-700
             },
             fontFamily: {
-              "display": ["'Press Start 2P'", "monospace"],
-              "mono": ["'VT323'", "monospace"]
+              "sans": ["Inter", "sans-serif"],
             },
-            borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "0px"},
           },
         },
       }
     </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 
     <!-- React Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -62,33 +38,129 @@
     <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
     <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
     <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- Upgraded to Babel 7 Standalone for modern syntax support -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-background-light dark:bg-background-dark text-[#EAEAEA] font-mono antialiased text-lg">
+<body class="bg-gray-50 text-gray-900 antialiased text-sm">
     <div id="root"></div>
 
     <script type="text/babel">
         // Global Destructuring
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
         const { createRoot } = ReactDOM;
-        const { MemoryRouter, Routes, Route, Link, useNavigate } = ReactRouterDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
         
         // --- DATA ---
+
+        // Users & Roles
+        const roles = [
+            { id: 'backend-engineer', name: 'Backend Engineer' },
+            { id: 'frontend-engineer', name: 'Frontend Engineer' },
+            { id: 'ui-designer', name: 'UI Designer' },
+            { id: 'devops-engineer', name: 'DevOps Engineer' },
+            { id: 'product-manager', name: 'Product Manager' }
+        ];
+
+        const initialUsers = [
+            { id: 'u1', name: 'Alex', role: 'frontend-engineer', avatar: 'https://i.pravatar.cc/150?u=alex', color: 'bg-blue-500' },
+            { id: 'u2', name: 'Brenda', role: 'devops-engineer', avatar: 'https://i.pravatar.cc/150?u=brenda', color: 'bg-purple-500' },
+            { id: 'u3', name: 'Charles', role: 'backend-engineer', avatar: 'https://i.pravatar.cc/150?u=charles', color: 'bg-red-500' },
+            { id: 'u4', name: 'David', role: 'backend-engineer', avatar: 'https://i.pravatar.cc/150?u=david', color: 'bg-green-500' },
+            { id: 'u5', name: 'Sarah', role: 'ui-designer', avatar: 'https://i.pravatar.cc/150?u=sarah', color: 'bg-yellow-500' },
+        ];
+
         const initialTasks = {
           inbox: [
-            { id: 'CT-128', status: 'inbox', title: 'Design New User Onboarding Flow', priority: 'p2', priorityColor: 'bg-[#4A3E2D] text-[#FFC107]', assignee: { initial: 'UI', color: 'bg-gray-500', name: 'UI Designer' }, role: 'UI', body: 'Design the new onboarding flow for mobile users.\n\n- [ ] Sketch wireframes\n- [ ] Review with product\n- [ ] Finalize high-fidelity mocks' },
-            { id: 'CT-131', status: 'inbox', title: 'Fix Database Connection Leak', priority: 'p1', priorityColor: 'bg-[#542B2B] text-[#FF8A80]', assignee: { initial: 'C', color: 'bg-red-800', name: 'Charles' }, role: 'Backend', body: 'Investigate connection pool exhaustion in the worker service.' },
+            {
+              id: 'CT-128',
+              status: 'inbox',
+              title: 'Design New User Onboarding Flow',
+              priority: 'p2',
+              priorityColor: 'bg-yellow-100 text-yellow-800',
+              role_owner: 'ui-designer',
+              creator: 'u5',
+              reviewer: 'u1',
+              collaborator: 'u5',
+              due_date: '',
+              timestamp_capture: '2023-10-26T10:00:00Z',
+              project: 'Mobile App',
+              assignee: { initial: 'UI', color: 'bg-gray-500', name: 'UI Designer' },
+              body: 'Design the new onboarding flow for mobile users.\n\n```{subtasks}\n- [ ] [Sketch wireframes](./sub-1)\n- [ ] [Review with product](./sub-2)\n- [ ] [Finalize high-fidelity mocks](./sub-3)\n```'
+            },
+            {
+              id: 'CT-131',
+              status: 'inbox',
+              title: 'Fix Database Connection Leak',
+              priority: 'p1',
+              priorityColor: 'bg-red-100 text-red-800',
+              role_owner: 'backend-engineer',
+              creator: 'u3',
+              reviewer: 'u4',
+              collaborator: null,
+              due_date: '2023-11-01',
+              timestamp_capture: '2023-10-27T09:30:00Z',
+              project: 'Core Backend',
+              assignee: { initial: 'C', color: 'bg-red-600', name: 'Charles' },
+              body: 'Investigate connection pool exhaustion in the worker service.'
+            },
           ],
           next: [
-            { id: 'CT-124', status: 'next', title: 'Refactor Authentication Service', priority: 'p1', priorityColor: 'bg-[#542B2B] text-[#FF8A80]', assignee: { initial: 'D', color: 'bg-green-800', name: 'David' }, role: 'Backend', body: 'Migrate legacy auth tokens to JWT.' },
-            { id: 'CT-130', status: 'next', title: 'Implement Search API Endpoint', priority: 'p3', priorityColor: 'bg-[#3B2E49] text-[#E0B0FF]', assignee: { initial: 'D', color: 'bg-green-800', name: 'David' }, role: 'Backend', body: 'Create /api/v1/search endpoint with filtering capabilities.' },
+            {
+                id: 'CT-124',
+                status: 'next',
+                title: 'Refactor Authentication Service',
+                priority: 'p1',
+                priorityColor: 'bg-red-100 text-red-800',
+                role_owner: 'backend-engineer',
+                creator: 'u4',
+                reviewer: 'u3',
+                collaborator: null,
+                due_date: '2023-11-15',
+                timestamp_capture: '2023-10-20T14:00:00Z',
+                timestamp_commitment: '2023-10-25T09:00:00Z',
+                project: 'Core Backend',
+                assignee: { initial: 'D', color: 'bg-green-600', name: 'David' },
+                body: 'Migrate legacy auth tokens to JWT.'
+            },
           ],
           waiting: [
-             { id: 'CT-132', status: 'waiting', title: 'Waiting for Design Review', priority: 'p2', priorityColor: 'bg-[#4A3E2D] text-[#FFC107]', assignee: { initial: 'UI', color: 'bg-gray-500', name: 'UI Designer' }, role: 'UI', body: 'Pending approval from the design lead.' },
+             {
+                 id: 'CT-132',
+                 status: 'waiting',
+                 title: 'Waiting for Design Review',
+                 priority: 'p2',
+                 priorityColor: 'bg-yellow-100 text-yellow-800',
+                 role_owner: 'ui-designer',
+                 creator: 'u5',
+                 reviewer: 'u1',
+                 collaborator: null,
+                 due_date: '2023-10-30',
+                 timestamp_capture: '2023-10-24T11:00:00Z',
+                 timestamp_commitment: '2023-10-24T12:00:00Z',
+                 project: 'Mobile App',
+                 assignee: { initial: 'UI', color: 'bg-gray-500', name: 'UI Designer' },
+                 body: 'Pending approval from the design lead. Blocking #CT-128'
+            },
           ],
           done: [
-            { id: 'CT-119', status: 'done', title: 'Update Deployment Scripts', priority: 'p2', priorityColor: 'bg-[#4A3E2D] text-[#FFC107]', assignee: { initial: 'B', color: 'bg-blue-800', name: 'Brenda' }, role: 'DevOps', body: 'Updated k8s manifests for the new cluster.' },
-            { id: 'CT-115', status: 'done', title: 'Onboard New Frontend Developer', priority: 'p3', priorityColor: 'bg-[#3B2E49] text-[#E0B0FF]', assignee: { initial: 'B', color: 'bg-blue-800', name: 'Brenda' }, role: 'Management', body: 'Setup laptop and accounts for the new hire.' },
+            {
+                id: 'CT-119',
+                status: 'done',
+                title: 'Update Deployment Scripts',
+                priority: 'p2',
+                priorityColor: 'bg-yellow-100 text-yellow-800',
+                role_owner: 'devops-engineer',
+                creator: 'u2',
+                reviewer: 'u3',
+                collaborator: null,
+                due_date: '2023-10-20',
+                timestamp_capture: '2023-10-18T10:00:00Z',
+                timestamp_commitment: '2023-10-18T11:00:00Z',
+                timestamp_completion: '2023-10-20T16:00:00Z',
+                project: 'Infrastructure',
+                assignee: { initial: 'B', color: 'bg-blue-600', name: 'Brenda' },
+                body: 'Updated k8s manifests for the new cluster.'
+            },
           ]
         };
 
@@ -103,9 +175,9 @@
         // --- COMPONENTS ---
 
         const NavLink = ({ icon, text, active = false, to = "#" }) => (
-            <Link to={to} className={`flex items-center gap-3 px-3 py-2 cursor-pointer border-2 border-transparent hover:border-[#333] hover:bg-[#222] ${active ? 'bg-[#222] border-[#444] text-white' : 'text-[#9dabb9]'}`}>
-                <span className="material-symbols-outlined text-base">{icon}</span>
-                <p className="font-medium text-lg pt-1">{text}</p>
+            <Link to={to} className={`flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md transition-colors ${active ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}>
+                <span className="material-symbols-outlined text-[20px]">{icon}</span>
+                <p className="text-sm">{text}</p>
             </Link>
         );
 
@@ -113,104 +185,146 @@
             const [expanded, setExpanded] = useState(defaultExpanded);
 
             return (
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2 py-1 cursor-pointer hover:bg-[#222] p-1 border-2 border-transparent hover:border-[#333]" onClick={() => setExpanded(!expanded)}>
-                        <span className="material-symbols-outlined text-base text-[#9dabb9]">{expanded ? 'expand_more' : 'chevron_right'}</span>
-                        <div className={`w-3 h-3 border-2 border-[#111] ${color}`}></div>
-                        <p className="text-white text-lg pt-1">{title}</p>
+                <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2 py-1.5 px-2 cursor-pointer hover:bg-gray-100 rounded-md" onClick={() => setExpanded(!expanded)}>
+                        <span className="material-symbols-outlined text-[18px] text-gray-400">{expanded ? 'expand_more' : 'chevron_right'}</span>
+                        <div className={`w-2.5 h-2.5 rounded-full ${color}`}></div>
+                        <p className="text-gray-700 text-sm font-medium">{title}</p>
                     </div>
-                    {expanded && <div className="pl-6 flex flex-col gap-1 border-l-2 border-[#2a2a2a] ml-2">{children}</div>}
+                    {expanded && <div className="pl-9 flex flex-col gap-0.5">{children}</div>}
                 </div>
             );
         };
         
         const NavSubItem = ({ color, text }) => (
-            <div className="flex items-center gap-2 py-1 hover:bg-[#222] p-1">
-                <div className={`w-2 h-2 ${color}`}></div>
-                <p className="text-[#9dabb9] text-lg">{text}</p>
+            <div className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100 rounded-md cursor-pointer">
+                <div className={`w-2 h-2 rounded-full ${color}`}></div>
+                <p className="text-gray-600 text-sm">{text}</p>
             </div>
         );
         
-        const Sidebar = () => (
-            <aside className="w-[300px] min-w-[240px] max-w-[400px] flex-shrink-0 bg-[#0c0c0c] border-r-4 border-[#2a2a2a] p-4 flex flex-col resize-x overflow-auto">
-                <div className="flex items-center gap-4 mb-8 px-1 border-b-4 border-[#2a2a2a] pb-4">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover size-12 border-2 border-[#fff]" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSOR72eK1H5cCfSa1I3VSaTQGtjYThNG9XIAbrPmHmFGdwj00ApRaoTp5Thj60nEoKEszuJwFg5I_T1xNWHmuBA5dTPbJxhBlQeksRAA8fXppcaZQEAnayvUoputQ0j8H5kRMKpnLtwG51hcZPEMZq-ijB2VVeRl3yxDmQU4x5oMoL-rpqbRiGe1AKLw7NH3sSbrD-RLgacDfcn4Hh-LaOER-CuWCCK0Klz7i97I48cXYBCuj3HDs_xqM-R-8IdlhlKq0gt9QIMEYB")' }}></div>
-                    <div className="flex flex-col">
-                        <h1 className="text-white text-xs font-display leading-normal mb-1">CoreTerra</h1>
-                        <p className="text-[#9dabb9] text-sm font-normal leading-normal">Lvl 5 (250/500 XP)</p>
-                        <div className="flex items-center gap-1">
-                            <span className="text-blue-400 text-xs">💎</span>
-                            <span className="text-blue-400 text-xs font-bold">120</span>
+        const Sidebar = ({ users, onUserClick }) => {
+            const location = useLocation();
+
+            return (
+                <aside className="w-[260px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+                    <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+                        <div className="bg-center bg-no-repeat bg-cover w-10 h-10 rounded-full bg-gray-200 border border-gray-100 shadow-sm cursor-pointer hover:ring-2 ring-primary transition-all"
+                             style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSOR72eK1H5cCfSa1I3VSaTQGtjYThNG9XIAbrPmHmFGdwj00ApRaoTp5Thj60nEoKEszuJwFg5I_T1xNWHmuBA5dTPbJxhBlQeksRAA8fXppcaZQEAnayvUoputQ0j8H5kRMKpnLtwG51hcZPEMZq-ijB2VVeRl3yxDmQU4x5oMoL-rpqbRiGe1AKLw7NH3sSbrD-RLgacDfcn4Hh-LaOER-CuWCCK0Klz7i97I48cXYBCuj3HDs_xqM-R-8IdlhlKq0gt9QIMEYB")' }}
+                             onClick={() => onUserClick('me')}
+                        ></div>
+                        <div className="flex flex-col">
+                            <h1 className="text-gray-900 font-semibold text-sm">CoreTerra</h1>
+                            <p className="text-gray-500 text-xs">Level 5 (250/500 XP)</p>
                         </div>
                     </div>
-                </div>
-                <div className="flex flex-col gap-2 text-sm">
-                    <NavLink icon="dashboard" text="Kanban" active={true} to="/" />
-                    <NavLink icon="folder_managed" text="Role Index" />
+                    <div className="flex flex-col gap-1 p-3">
+                        <NavLink icon="dashboard" text="Kanban" active={location.pathname === '/'} to="/" />
+                        <NavLink icon="inbox" text="Inbox" active={location.pathname === '/inbox'} to="/inbox" />
+                        <NavLink icon="folder_managed" text="Role Index" />
 
-                    <div className="flex flex-col gap-1 pl-2 mt-4">
-                        <NavGroup icon="expand_more" color="bg-[#2ECC71]" title="Project Lead" defaultExpanded={true}>
-                            <NavSubItem color="bg-[#2ECC71]" text="Brenda" />
-                        </NavGroup>
-                        <NavGroup icon="expand_more" color="bg-[#E74C3C]" title="Backend Dev" defaultExpanded={true}>
-                           <NavSubItem color="bg-[#E74C3C]" text="Charles" />
-                           <NavSubItem color="bg-[#2ECC71]" text="David" />
-                        </NavGroup>
-                        <NavGroup icon="chevron_right" color="bg-[#2ECC71]" title="UI Designer" defaultExpanded={false} />
-                        <NavGroup icon="chevron_right" color="bg-[#2ECC71]" title="Frontend Dev" defaultExpanded={false} />
+                        <div className="flex flex-col gap-1 mt-4">
+                            <NavGroup icon="expand_more" color="bg-green-500" title="Project Lead" defaultExpanded={true}>
+                                <NavSubItem color="bg-green-500" text="Brenda" />
+                            </NavGroup>
+                            <NavGroup icon="expand_more" color="bg-red-500" title="Backend Dev" defaultExpanded={true}>
+                            <NavSubItem color="bg-red-500" text="Charles" />
+                            <NavSubItem color="bg-green-500" text="David" />
+                            </NavGroup>
+                        </div>
                     </div>
-                </div>
-                <div className="mt-auto flex flex-col gap-1">
-                    <NavLink icon="settings" text="Settings" />
-                    <NavLink icon="help" text="Help" />
-                </div>
-            </aside>
-        );
+                    <div className="mt-auto flex flex-col gap-1 p-3 border-t border-gray-100">
+                        <NavLink icon="settings" text="Settings" />
+                        <NavLink icon="help" text="Help" />
+                    </div>
+                </aside>
+            );
+        };
 
         const TaskCard = ({ task, isDone, onClick }) => (
-            <div onClick={() => onClick(task)} className={`bg-[#1C1C1C] border-2 border-[#444] p-3 cursor-pointer ${isDone ? 'opacity-60' : ''} hover:border-primary hover:bg-[#222] transition-colors duration-75 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)] active:translate-y-1 active:shadow-none group`}>
-                <div className="flex justify-between items-start">
-                    <p className={`text-lg text-white/90 mb-3 pr-2 leading-tight ${isDone ? 'line-through decoration-2' : ''}`}>{task.title}</p>
-                    <span className="material-symbols-outlined text-[#333] group-hover:text-[#9dabb9] text-base transition-colors">edit_document</span>
+            <div onClick={() => onClick(task)} className={`bg-white border border-gray-200 p-3 rounded-lg cursor-pointer ${isDone ? 'opacity-60' : ''} hover:border-primary hover:shadow-md transition-all duration-200 shadow-sm group`}>
+                <div className="flex justify-between items-start mb-2">
+                    <p className={`text-sm text-gray-800 font-medium leading-snug ${isDone ? 'line-through decoration-gray-400 text-gray-500' : ''}`}>{task.title}</p>
+                    <span className="material-symbols-outlined text-gray-300 group-hover:text-gray-500 text-sm transition-colors ml-2">edit_document</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                        <span className="text-[#9dabb9] text-base">{task.id}</span>
-                        <span className={`px-2 py-1 ${task.priorityColor} border border-white/10 uppercase tracking-widest text-[10px]`}>{task.priority}</span>
+                        <span className="text-gray-400 font-mono text-[11px]">{task.id}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${task.priorityColor}`}>{task.priority}</span>
+                        {task.project && <span className="text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{task.project}</span>}
                     </div>
-                    <div className={`w-6 h-6 ${task.assignee.color} text-white flex items-center justify-center text-[10px] font-bold border-2 border-[#000] shadow-[1px_1px_0px_0px_rgba(255,255,255,0.2)]`} title={task.assignee.name}>
-                        {task.assignee.initial}
+                    <div className={`w-6 h-6 rounded-full ${(task.assignee && task.assignee.color) || 'bg-gray-300'} text-white flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm`} title={task.assignee && task.assignee.name}>
+                        {task.assignee && task.assignee.initial}
                     </div>
                 </div>
             </div>
         );
 
         const KanbanColumn = ({ title, count, tasks, isDone = false, onTaskClick }) => (
-            <div className="w-[340px] flex-shrink-0 flex flex-col bg-[#111] border-2 border-[#333] p-2">
-                <div className="flex items-center justify-between pb-4 border-b-2 border-[#333] mb-4 p-2 bg-[#1a1a1a]">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-xs font-display text-white uppercase tracking-wider">{title}</h2>
-                        <span className="text-base text-[#111] bg-[#9dabb9] px-2 py-0.5">{count}</span>
+            <div className="w-[320px] flex-shrink-0 flex flex-col bg-gray-50/50 rounded-xl h-full">
+                <div className="flex items-center justify-between p-3 pb-2">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</h2>
+                        <span className="text-xs text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full font-medium">{count}</span>
                     </div>
-                    <span className="material-symbols-outlined text-[#9dabb9] cursor-pointer">more_horiz</span>
+                    <span className="material-symbols-outlined text-gray-400 cursor-pointer text-lg hover:text-gray-600">more_horiz</span>
                 </div>
-                <div className="flex flex-col gap-4 overflow-y-auto pr-2 flex-1 p-1">
+                <div className="flex flex-col gap-3 overflow-y-auto px-2 pb-4 flex-1">
                     {tasks.map(task => <TaskCard key={task.id} task={task} isDone={isDone} onClick={onTaskClick} />)}
                 </div>
             </div>
         );
 
-        const KanbanBoard = ({ tasks, onTaskClick, onCommand, onFilterChange, filterText }) => {
-            const [command, setCommand] = useState('');
+        // --- NEW COMPONENT: CALENDAR VIEW ---
+        const CalendarView = ({ tasks, onTaskClick }) => {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
 
-            const handleKeyDown = (e) => {
-                if (e.key === 'Enter' && command.trim()) {
-                    onCommand(command);
-                    setCommand('');
-                }
+            // Generate days for the current month
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sunday
+
+            const days = [];
+            for (let i = 0; i < firstDayOfWeek; i++) days.push(null); // padding
+            for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+            // Filter tasks that are not done and have a due date in this month
+            // We'll just show all active tasks with due date for simplicity of prototype
+            const activeTasks = [...tasks.next, ...tasks.waiting];
+
+            const getTasksForDay = (day) => {
+                if (!day) return [];
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                return activeTasks.filter(t => t.due_date === dateStr);
             };
 
-            // Filter tasks locally for display
+            return (
+                <div className="flex-1 p-6 bg-gray-50/30 overflow-auto">
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
+                        <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden flex-1">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                                <div key={d} className="bg-gray-50 p-2 text-center text-xs font-semibold text-gray-500 uppercase">{d}</div>
+                            ))}
+                            {days.map((day, i) => (
+                                <div key={i} className={`bg-white p-2 min-h-[100px] flex flex-col gap-1 ${day ? 'hover:bg-gray-50' : 'bg-gray-50/50'}`}>
+                                    {day && <span className="text-xs font-medium text-gray-400 mb-1">{day}</span>}
+                                    {getTasksForDay(day).map(task => (
+                                        <div key={task.id} onClick={() => onTaskClick(task)} className={`text-[10px] p-1 rounded border border-gray-100 cursor-pointer truncate ${task.priorityColor} opacity-80 hover:opacity-100`}>
+                                            {task.title}
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const KanbanBoard = ({ tasks, onTaskClick, onFilterChange, filterText }) => {
+            const [view, setView] = useState('board'); // 'board' or 'calendar'
+
             const filterTasks = (list) => {
                 if (!filterText) return list;
                 const lower = filterText.toLowerCase();
@@ -221,200 +335,600 @@
             };
 
             return (
-                <div className="flex-1 flex flex-col min-w-0 overflow-x-auto bg-[#161616]">
-                    <div className="px-6 py-4 border-b-4 border-[#2a2a2a] bg-[#1a1a1a]">
-                        <div className="relative">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9dabb9] text-xl">search</span>
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
+                    <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
+                        <div className="relative flex-1 max-w-md">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">search</span>
                             <input
-                                className="w-full bg-[#000] border-2 border-[#333] h-12 pl-12 pr-4 text-white/90 placeholder:text-[#555] focus:outline-0 focus:border-primary text-lg font-mono"
-                                placeholder="Filter tasks (e.g. 'design' or 'CT-128')..."
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg h-10 pl-10 pr-4 text-gray-900 placeholder:text-gray-400 focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all"
+                                placeholder="Filter tasks..."
                                 type="text"
                                 value={filterText}
                                 onChange={(e) => onFilterChange(e.target.value)}
                             />
                         </div>
+                        <div className="flex bg-gray-100 p-1 rounded-lg">
+                            <button
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${view === 'board' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => setView('board')}
+                            >
+                                Board
+                            </button>
+                            <button
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${view === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => setView('calendar')}
+                            >
+                                Calendar
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex-1 p-6 flex gap-6 overflow-x-auto">
-                        <KanbanColumn title="Inbox" count={filterTasks(tasks.inbox).length} tasks={filterTasks(tasks.inbox)} onTaskClick={onTaskClick} />
-                        <KanbanColumn title="Next" count={filterTasks(tasks.next).length} tasks={filterTasks(tasks.next)} onTaskClick={onTaskClick} />
-                        <KanbanColumn title="Waiting For" count={filterTasks(tasks.waiting).length} tasks={filterTasks(tasks.waiting)} onTaskClick={onTaskClick} />
-                        <KanbanColumn title="Done" count={filterTasks(tasks.done).length} tasks={filterTasks(tasks.done)} isDone={true} onTaskClick={onTaskClick} />
+
+                    {view === 'board' ? (
+                        <div className="flex-1 p-6 flex gap-6 overflow-x-auto bg-gray-50/30">
+                            <KanbanColumn title="Next" count={filterTasks(tasks.next).length} tasks={filterTasks(tasks.next)} onTaskClick={onTaskClick} />
+                            <KanbanColumn title="Waiting For" count={filterTasks(tasks.waiting).length} tasks={filterTasks(tasks.waiting)} onTaskClick={onTaskClick} />
+                            <KanbanColumn title="Done" count={filterTasks(tasks.done).length} tasks={filterTasks(tasks.done)} isDone={true} onTaskClick={onTaskClick} />
+                        </div>
+                    ) : (
+                        <CalendarView tasks={tasks} onTaskClick={onTaskClick} />
+                    )}
+                </div>
+            );
+        }
+
+        // --- NEW COMPONENT: QUICK ADD BAR ---
+        const QuickAddBar = ({ onCommand, onExpand }) => {
+            const [command, setCommand] = useState('');
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter' && command.trim()) {
+                    onCommand(command);
+                    setCommand('');
+                }
+            };
+
+            return (
+                <div className="h-16 border-t border-gray-200 bg-white flex items-center px-6 gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+                    <div className="flex-1 relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary text-xl">add_circle</span>
+                        <input
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg h-10 pl-10 pr-12 text-gray-900 placeholder:text-gray-400 focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                            placeholder="Quick add task to Inbox..."
+                            value={command}
+                            onChange={(e) => setCommand(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                        />
+                        <button onClick={onExpand} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary material-symbols-outlined p-1 rounded-md hover:bg-gray-100 transition-colors">
+                            open_in_full
+                        </button>
                     </div>
-                    <div className="flex items-center px-4 py-3 gap-3 border-t-4 border-[#2a2a2a] bg-[#0c0c0c]">
-                        <div className="bg-center bg-no-repeat aspect-square bg-cover size-10 border-2 border-[#fff]" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAu627pw9HLspmbpQrYJ5l7a3ZEasDUlVCJ5oLx0oRMORN4e2T2I3kocxkfnLxMcwAaY6QpdP2dsq-zFGlBQdatzQ8_vKfcGI-PKP5DGr7d4Z6DcuWbpOpaTNQQbeXwITGVYbRVteqGplaDwU65GJPKwzKuYJVg8TUqb1u1IqH7CxJKQgws_kYb6lrFrHg1f6ohCOV_RjUUZQbz-qGQLq7VHF1zYneOYs2dHWRkTpE7fQnCxBCHRTBcP9nmozeh5FvVy-kUEmKiw_eA")' }}></div>
-                        <label className="flex flex-col min-w-40 h-12 flex-1">
-                            <div className="flex w-full flex-1 items-stretch h-full">
-                                <input
-                                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden text-[#00ff00] focus:outline-0 border-2 border-[#333] focus:border-primary bg-[#000] h-full placeholder:text-[#005500] px-4 text-lg font-mono"
-                                    placeholder="> Type task title and press Enter..."
-                                    value={command}
-                                    onChange={(e) => setCommand(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                />
-                            </div>
-                        </label>
+                </div>
+            );
+        };
+
+        const CreateTaskModal = ({ onClose, onCreate }) => {
+            const [title, setTitle] = useState('');
+            const [desc, setDesc] = useState('');
+
+            const handleSubmit = () => {
+                if (title.trim()) {
+                    onCreate(title, desc);
+                    onClose();
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-white z-50 flex flex-col animate-fade-in">
+                    <div className="px-8 py-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h1 className="text-2xl font-bold text-gray-900">Create New Task</h1>
+                        <button onClick={onClose} className="text-gray-500 hover:text-gray-900 material-symbols-outlined text-3xl">close</button>
+                    </div>
+                    <div className="flex-1 p-8 max-w-4xl mx-auto w-full flex flex-col gap-6">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-semibold text-gray-700">Task Title</label>
+                            <input
+                                className="w-full text-3xl font-bold text-gray-900 border-none border-b-2 border-gray-200 focus:border-primary p-2 focus:ring-0 placeholder:text-gray-300"
+                                placeholder="What needs to be done?"
+                                value={title}
+                                onChange={e => setTitle(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2 flex-1">
+                            <label className="text-sm font-semibold text-gray-700">Description</label>
+                            <textarea
+                                className="w-full flex-1 bg-gray-50 border border-gray-200 rounded-lg p-4 text-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                                placeholder="Add details..."
+                                value={desc}
+                                onChange={e => setDesc(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex justify-end pt-4">
+                            <button
+                                onClick={handleSubmit}
+                                className="bg-primary hover:bg-primary-hover text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-lg flex items-center gap-2"
+                            >
+                                <span>Create Task</span>
+                                <span className="material-symbols-outlined">check</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
         }
 
-        const InfoPanel = ({ logs }) => (
-            <aside className="w-[360px] min-w-[300px] max-w-[500px] flex-shrink-0 flex flex-col resize-x overflow-auto bg-[#0c0c0c] border-l-4 border-[#2a2a2a]">
-                <div className="flex-1 p-6 text-sm leading-relaxed overflow-y-auto font-mono">
-                    <h2 className="text-xs font-display text-primary mb-4 border-b-2 border-primary pb-2 inline-block">TEAM STATUS</h2>
-                    <p className="text-white/80 whitespace-pre-wrap pb-3 pt-1">{`Alex: Online
-Brenda: In-Focus (API Design)
-Charles: Blocked (Waiting for review)`}
-                    </p>
-                    <h2 className="text-xs font-display text-primary mb-4 mt-8 border-b-2 border-primary pb-2 inline-block">LOG STREAM</h2>
-                    <p className="text-[#00ff00] whitespace-pre-wrap">
-                        {logs.join('\n')}
-                    </p>
+        const InboxPage = ({ tasks, onTaskClick }) => (
+             <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
+                <div className="px-8 py-6 border-b border-gray-200">
+                    <h1 className="text-2xl font-bold text-gray-900">Inbox</h1>
+                    <p className="text-gray-500 text-sm mt-1">Review and process new tasks. Fill in mandatory fields to move them to the board.</p>
                 </div>
-                <div className="flex-1 p-6 border-t-4 border-[#2a2a2a] text-sm leading-relaxed overflow-y-auto bg-[#000]">
-                    <h2 className="text-xs font-display text-primary mb-4 border-b-2 border-primary pb-2 inline-block">COMMAND OUTPUT</h2>
-                    <p className="text-[#00ff00] whitespace-pre-wrap">{`$ pqi get --role='Frontend'
-> Project Quality Index for 'Frontend' is 72 (Red).
-$ get tasks --assignee='@david'
-> 1. #CT-124 Refactor Authentication Service
-> 2. #CT-131 Fix Database Connection Leak`}
-                    </p>
+                <div className="p-8 flex-1 overflow-y-auto bg-gray-50/30">
+                     <div className="max-w-4xl mx-auto space-y-4">
+                        {tasks.length === 0 ? (
+                            <div className="text-center py-20 text-gray-400">
+                                <span className="material-symbols-outlined text-4xl mb-2">inbox</span>
+                                <p>Inbox is empty. Great job!</p>
+                            </div>
+                        ) : (
+                            tasks.map(task => (
+                                <div key={task.id} onClick={() => onTaskClick(task)} className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:shadow-md transition-all hover:border-primary group">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">{task.title}</h3>
+                                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">{task.body.split('\n')[0]}</p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            <span className="text-xs text-gray-400 font-mono">{task.id}</span>
+                                            {(!task.due_date || !task.role_owner) && (
+                                                <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full uppercase tracking-wide">Missing Info</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                                        <span className={`px-2 py-0.5 rounded-full font-medium ${task.priorityColor}`}>{task.priority.toUpperCase()}</span>
+                                        <div className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">event</span>
+                                            <span>{task.due_date || 'No Date'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-sm">person</span>
+                                            <span>{(roles.find(r => r.id === task.role_owner) || {}).name || 'No Role'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                     </div>
+                </div>
+             </div>
+        );
+
+        const InfoPanel = ({ logs, visible, onToggle }) => (
+            <aside className={`flex-shrink-0 flex flex-col bg-white border-l border-gray-200 transition-all duration-300 ease-in-out ${visible ? 'w-[300px]' : 'w-0 overflow-hidden border-l-0'}`}>
+                <div className="flex-1 p-5 overflow-y-auto w-[300px]">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Team Status</h2>
+                        <button onClick={onToggle} className="text-gray-400 hover:text-gray-700 material-symbols-outlined text-sm">close</button>
+                    </div>
+                    <div className="space-y-3 mb-8">
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span>Alex: Online</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span>Brenda: In-Focus (API)</span>
+                        </div>
+                         <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                            <span>Charles: Blocked</span>
+                        </div>
+                    </div>
+
+                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Activity Log</h2>
+                    <div className="space-y-3">
+                        {logs.map((log, i) => (
+                            <div key={i} className="text-xs text-gray-600 leading-relaxed border-l-2 border-gray-100 pl-3 py-0.5">
+                                {log}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </aside>
         );
 
-        const TaskDetail = ({ task, onClose, onUpdate }) => {
-            const [localTask, setLocalTask] = useState(task);
+        const UserProfileModal = ({ user, onClose }) => {
+            if (!user) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={onClose}>
+                    <div className="bg-white rounded-lg w-[400px] shadow-2xl p-6" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-start justify-between mb-6">
+                            <h2 className="text-lg font-bold text-gray-900">User Profile</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 material-symbols-outlined">close</button>
+                        </div>
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="bg-center bg-no-repeat bg-cover w-16 h-16 rounded-full bg-gray-200 border border-gray-100 shadow-md" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSOR72eK1H5cCfSa1I3VSaTQGtjYThNG9XIAbrPmHmFGdwj00ApRaoTp5Thj60nEoKEszuJwFg5I_T1xNWHmuBA5dTPbJxhBlQeksRAA8fXppcaZQEAnayvUoputQ0j8H5kRMKpnLtwG51hcZPEMZq-ijB2VVeRl3yxDmQU4x5oMoL-rpqbRiGe1AKLw7NH3sSbrD-RLgacDfcn4Hh-LaOER-CuWCCK0Klz7i97I48cXYBCuj3HDs_xqM-R-8IdlhlKq0gt9QIMEYB")' }}></div>
+                            <div>
+                                <h3 className="font-bold text-xl text-gray-900">Admin User</h3>
+                                <p className="text-gray-500">Product Manager</p>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Stats</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-2xl font-bold text-primary">Lvl 5</p>
+                                        <p className="text-xs text-gray-500">Current Level</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-primary">250</p>
+                                        <p className="text-xs text-gray-500">XP / 500</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
-            useEffect(() => { setLocalTask(task); }, [task]);
+        const TaskDetail = ({ task, onClose, onUpdate, onLinkClick }) => {
+            const [localTask, setLocalTask] = useState(task);
+            const [subtasks, setSubtasks] = useState([]);
+
+            useEffect(() => {
+                setLocalTask(task);
+
+                // Parse Subtasks
+                const subtasksBlockMatch = (task.body || '').match(/```{subtasks}\n([\s\S]*?)\n```/);
+                if (subtasksBlockMatch) {
+                    const content = subtasksBlockMatch[1];
+                    const lines = content.split('\n').filter(l => l.trim().length > 0);
+                    const parsed = lines.map(line => {
+                        const match = line.match(/- \[(x| )\] \[(.*?)\]\((.*?)\)/);
+                        if (match) {
+                            return { checked: match[1] === 'x', title: match[2], link: match[3], original: line };
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    setSubtasks(parsed);
+                } else {
+                    setSubtasks([]);
+                }
+            }, [task]);
+
+            const updateBodyWithSubtasks = (newSubtasks) => {
+                const subtasksBlock = "```{subtasks}\n" + newSubtasks.map(st => `- [${st.checked ? 'x' : ' '}] [${st.title}](${st.link})`).join('\n') + "\n```";
+
+                let newBody = localTask.body || '';
+                if (newBody.includes("```{subtasks}")) {
+                    newBody = newBody.replace(/```{subtasks}\n[\s\S]*?\n```/, subtasksBlock);
+                } else {
+                    newBody = newBody + "\n\n" + subtasksBlock;
+                }
+
+                setLocalTask(prev => ({ ...prev, body: newBody }));
+                return newBody;
+            };
 
             const handleChange = (field, value) => {
                 const updated = { ...localTask, [field]: value };
                 setLocalTask(updated);
-
-                // If the field is one that affects visuals (like priorityColor), we should simulate that update too if we had logic for it.
-                // For status change, we handle it in parent.
-                // For priority color, it's hardcoded in the example data, so we might need a mapping function in a real app.
-                // Here we just pass the raw value change.
-
                 onUpdate(updated, `UPDATE: ${task.id} - Changed ${field} to '${value}'`);
             };
 
+            const handleSubtaskChange = (index, field, value) => {
+                const newSubtasks = [...subtasks];
+                newSubtasks[index] = { ...newSubtasks[index], [field]: value };
+                setSubtasks(newSubtasks);
+                const newBody = updateBodyWithSubtasks(newSubtasks);
+                onUpdate({ ...localTask, body: newBody }, `UPDATE: ${task.id} - Updated subtask`);
+            };
+
+            const addSubtask = () => {
+                const id = Math.floor(Math.random() * 10000);
+                const newSt = { checked: false, title: 'New Subtask', link: `./st-${id}.md` };
+                const newSubtasks = [...subtasks, newSt];
+                setSubtasks(newSubtasks);
+                const newBody = updateBodyWithSubtasks(newSubtasks);
+                onUpdate({ ...localTask, body: newBody }, `UPDATE: ${task.id} - Added subtask`);
+            };
+
+             const deleteSubtask = (index) => {
+                const newSubtasks = subtasks.filter((_, i) => i !== index);
+                setSubtasks(newSubtasks);
+                const newBody = updateBodyWithSubtasks(newSubtasks);
+                onUpdate({ ...localTask, body: newBody }, `UPDATE: ${task.id} - Deleted subtask`);
+            };
+
+            const handleMoveToBoard = () => {
+                if (!localTask.due_date || !localTask.role_owner) {
+                    alert("Please fill in Due Date and Role Owner before moving to the board.");
+                    return;
+                }
+
+                const updated = {
+                    ...localTask,
+                    status: 'next',
+                    timestamp_commitment: new Date().toISOString()
+                };
+                onUpdate(updated, `MOVED: ${task.id} moved to board (Next)`);
+                onClose();
+            };
+
+            const renderBodyWithLinks = (text) => {
+                 if (!text) return null;
+                 // Remove subtasks block for display
+                 const cleanText = text.replace(/```{subtasks}\n[\s\S]*?\n```/, '');
+
+                 const parts = cleanText.split(/(#CT-\d+)/g);
+                 return parts.map((part, i) => {
+                     if (part.match(/^#CT-\d+$/)) {
+                         return <span key={i} className="text-primary hover:underline cursor-pointer font-medium" onClick={() => onLinkClick(part.substring(1))}>{part}</span>;
+                     }
+                     return part;
+                 });
+            };
+
+            const isInbox = localTask.status === 'inbox';
+            const canMove = localTask.due_date && localTask.role_owner;
+
             return (
-                <aside className="w-[400px] flex-shrink-0 flex flex-col bg-[#0c0c0c] border-l-4 border-[#2a2a2a] h-full">
-                    <div className="flex items-center justify-between p-4 border-b-4 border-[#2a2a2a] bg-[#1a1a1a]">
+                <aside className="w-[500px] flex-shrink-0 flex flex-col bg-white border-l border-gray-200 h-full shadow-xl z-20 absolute right-0 top-0 bottom-0">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
                          <div className="flex items-center gap-2">
-                             <span className="material-symbols-outlined text-[#9dabb9]">description</span>
-                             <span className="font-mono text-[#fff]">{task.id}.md</span>
+                             <span className="material-symbols-outlined text-gray-400">description</span>
+                             <span className="font-mono text-gray-500 text-xs bg-gray-100 px-2 py-1 rounded">{task.id}</span>
                          </div>
-                         <button onClick={onClose} className="text-[#9dabb9] hover:text-white material-symbols-outlined">close</button>
+                         <button onClick={onClose} className="text-gray-400 hover:text-gray-700 material-symbols-outlined rounded-full hover:bg-gray-100 p-1 transition-colors">close</button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-0 font-mono text-sm bg-[#111]">
-                        {/* Frontmatter Simulation */}
-                        <div className="bg-[#0f0f0f] border-b-4 border-[#2a2a2a] p-4 text-[#888]">
-                            <div className="flex gap-2 mb-2">
-                                <span className="text-primary">---</span>
-                            </div>
-                            <div className="grid grid-cols-[80px_1fr] gap-y-3 items-center">
-                                <label className="text-[#c792ea]">title:</label>
-                                <input className="bg-transparent border-b border-[#333] focus:border-primary text-[#ecc48d] p-0 focus:ring-0 w-full" value={localTask.title} onChange={e => handleChange('title', e.target.value)} />
+                    <div className="flex-1 overflow-y-auto bg-white">
+                        <div className="p-6 pb-4 border-b border-gray-100">
+                            <input
+                                className="w-full text-xl font-semibold text-gray-900 border-none p-0 focus:ring-0 placeholder:text-gray-300 mb-4"
+                                value={localTask.title}
+                                onChange={e => handleChange('title', e.target.value)}
+                                placeholder="Task Title"
+                            />
 
-                                <label className="text-[#c792ea]">status:</label>
-                                <select className="bg-[#111] border border-[#333] text-[#ecc48d] py-0 focus:ring-0 w-full h-7" value={localTask.status} onChange={e => handleChange('status', e.target.value)}>
-                                    <option value="inbox">inbox</option>
-                                    <option value="next">next</option>
-                                    <option value="waiting">waiting</option>
-                                    <option value="done">done</option>
+                            <div className="grid grid-cols-[120px_1fr] gap-y-4 items-center text-sm">
+                                <label className="text-gray-500 font-medium">Status</label>
+                                <select
+                                    className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                    value={localTask.status}
+                                    onChange={e => handleChange('status', e.target.value)}
+                                >
+                                    <option value="inbox">Inbox</option>
+                                    <option value="next">Next</option>
+                                    <option value="waiting">Waiting</option>
+                                    <option value="done">Done</option>
                                 </select>
 
-                                <label className="text-[#c792ea]">priority:</label>
-                                <select className="bg-[#111] border border-[#333] text-[#ecc48d] py-0 focus:ring-0 w-full h-7" value={localTask.priority} onChange={e => handleChange('priority', e.target.value)}>
-                                    <option value="p1">p1</option>
-                                    <option value="p2">p2</option>
-                                    <option value="p3">p3</option>
+                                <label className="text-gray-500 font-medium">Priority</label>
+                                <select
+                                    className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                    value={localTask.priority}
+                                    onChange={e => handleChange('priority', e.target.value)}
+                                >
+                                    <option value="p1">P1 - High</option>
+                                    <option value="p2">P2 - Medium</option>
+                                    <option value="p3">P3 - Low</option>
                                 </select>
 
-                                <label className="text-[#c792ea]">role:</label>
-                                <span className="text-[#c3e88d]">{localTask.assignee && localTask.assignee.name ? localTask.assignee.name : 'Unassigned'}</span>
+                                <label className="text-gray-500 font-medium">Role Owner <span className="text-red-500">*</span></label>
+                                <select
+                                    className={`bg-gray-50 border text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm ${!localTask.role_owner && isInbox ? 'border-red-300' : 'border-gray-200'}`}
+                                    value={localTask.role_owner || ''}
+                                    onChange={e => handleChange('role_owner', e.target.value)}
+                                >
+                                    <option value="">Select Role...</option>
+                                    {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                </select>
+
+                                <label className="text-gray-500 font-medium">Due Date <span className="text-red-500">*</span></label>
+                                <input
+                                    type="date"
+                                    className={`bg-gray-50 border text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm ${!localTask.due_date && isInbox ? 'border-red-300' : 'border-gray-200'}`}
+                                    value={localTask.due_date || ''}
+                                    onChange={e => handleChange('due_date', e.target.value)}
+                                />
+
+                                <label className="text-gray-500 font-medium">Project</label>
+                                <input
+                                    type="text"
+                                    className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                    value={localTask.project || ''}
+                                    onChange={e => handleChange('project', e.target.value)}
+                                    placeholder="Add tag..."
+                                />
                             </div>
-                            <div className="flex gap-2 mt-2">
-                                <span className="text-primary">---</span>
+
+                             <div className="mt-6 pt-4 border-t border-gray-100 grid grid-cols-[120px_1fr] gap-y-4 items-center text-sm">
+                                <label className="text-gray-500 font-medium">Creator</label>
+                                <select
+                                    className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                    value={localTask.creator || ''}
+                                    onChange={e => handleChange('creator', e.target.value)}
+                                >
+                                    <option value="">Select User...</option>
+                                    {initialUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                </select>
+
+                                <label className="text-gray-500 font-medium">Reviewer</label>
+                                <select
+                                    className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                    value={localTask.reviewer || ''}
+                                    onChange={e => handleChange('reviewer', e.target.value)}
+                                >
+                                    <option value="">Select User...</option>
+                                    {initialUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                </select>
+
+                                <label className="text-gray-500 font-medium">Collaborator</label>
+                                <select
+                                    className="bg-gray-50 border border-gray-200 text-gray-700 py-1.5 px-3 rounded-md focus:ring-primary focus:border-primary text-sm"
+                                    value={localTask.collaborator || ''}
+                                    onChange={e => handleChange('collaborator', e.target.value)}
+                                >
+                                    <option value="">Select User...</option>
+                                    {initialUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                </select>
                             </div>
                         </div>
 
-                        {/* Body */}
-                        <div className="p-4 h-full bg-[#0c0c0c] flex flex-col">
+                        {/* Subtasks Section */}
+                        <div className="p-6 pb-2 border-b border-gray-100 bg-gray-50/50">
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Subtasks</label>
+                                <button onClick={addSubtask} className="text-xs text-primary font-medium hover:text-primary-hover flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-[16px]">add</span> Add Subtask
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                {subtasks.length === 0 && <p className="text-sm text-gray-400 italic">No subtasks yet.</p>}
+                                {subtasks.map((st, i) => (
+                                    <div key={i} className="flex items-center gap-2 group">
+                                        <input
+                                            type="checkbox"
+                                            checked={st.checked}
+                                            onChange={e => handleSubtaskChange(i, 'checked', e.target.checked)}
+                                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={st.title}
+                                            onChange={e => handleSubtaskChange(i, 'title', e.target.value)}
+                                            className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 text-gray-700 border-b border-transparent focus:border-gray-300"
+                                        />
+                                        <button onClick={() => deleteSubtask(i)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 material-symbols-outlined text-[18px] transition-opacity">delete</button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-6 h-full flex flex-col">
+                            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Description (Markdown)</label>
+
+                            {/* Rendered View (Simple auto-link) */}
+                            <div className="mb-4 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                {renderBodyWithLinks(localTask.body)}
+                            </div>
+
                             <textarea
-                                className="w-full flex-1 bg-transparent border-none text-[#eaeaea] p-0 focus:ring-0 resize-none font-mono leading-relaxed"
-                                value={localTask.body || ''}
-                                onChange={e => handleChange('body', e.target.value)}
-                                placeholder="Write description here..."
+                                className="w-full flex-1 bg-gray-50 border border-gray-200 rounded p-2 text-gray-700 focus:ring-1 focus:ring-primary resize-none leading-relaxed text-sm min-h-[100px]"
+                                value={(localTask.body || '').replace(/```{subtasks}\n[\s\S]*?\n```/, '')}
+                                onChange={e => {
+                                    const subtasksBlockMatch = (localTask.body || '').match(/```{subtasks}\n[\s\S]*?\n```/);
+                                    let newBody = e.target.value;
+                                    if (subtasksBlockMatch) {
+                                        newBody += "\n\n" + subtasksBlockMatch[0];
+                                    }
+                                    handleChange('body', newBody);
+                                }}
+                                placeholder="Edit raw description..."
                             />
                         </div>
                     </div>
+
+                    {/* Inbox Action Footer */}
+                    {isInbox && (
+                        <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                            <button
+                                onClick={handleMoveToBoard}
+                                disabled={!canMove}
+                                className={`px-4 py-2 rounded-md font-medium text-white transition-all flex items-center gap-2 ${canMove ? 'bg-primary hover:bg-primary-hover shadow-md' : 'bg-gray-300 cursor-not-allowed'}`}
+                            >
+                                <span>Move to Board</span>
+                                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                            </button>
+                        </div>
+                    )}
                 </aside>
             );
         };
 
         // --- SCREEN ---
+        const DashboardLayout = ({ children, logs, onTaskClick, onUserClick, onQuickAdd, onCreateFull }) => {
+             const [infoPanelOpen, setInfoPanelOpen] = useState(true);
+
+             return (
+                <div className="flex h-screen w-full bg-gray-50">
+                    <Sidebar onUserClick={onUserClick} />
+                    <main className="flex-1 flex flex-col min-w-0 relative">
+                        <div className="flex-1 flex min-h-0 relative">
+                            {children}
+                            <div className="absolute right-4 top-4 z-10">
+                                {!infoPanelOpen && (
+                                    <button
+                                        onClick={() => setInfoPanelOpen(true)}
+                                        className="bg-white border border-gray-200 p-2 rounded-md shadow-md text-gray-500 hover:text-primary transition-all"
+                                        title="Show Info Panel"
+                                    >
+                                        <span className="material-symbols-outlined">dock_to_left</span>
+                                    </button>
+                                )}
+                            </div>
+                            <InfoPanel
+                                logs={logs}
+                                visible={infoPanelOpen}
+                                onToggle={() => setInfoPanelOpen(!infoPanelOpen)}
+                            />
+                        </div>
+                        <QuickAddBar onCommand={onQuickAdd} onExpand={onCreateFull} />
+                    </main>
+                </div>
+            );
+        };
+
         const DashboardPage = () => {
             const [tasks, setTasks] = useState(initialTasks);
             const [logs, setLogs] = useState(initialLogs);
             const [selectedTask, setSelectedTask] = useState(null);
             const [filterText, setFilterText] = useState('');
+            const [showProfile, setShowProfile] = useState(false);
+            const [showCreateModal, setShowCreateModal] = useState(false);
 
             const handleTaskUpdate = (updatedTask, logMessage) => {
-                // Update Logs
                 const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
                 setLogs(prev => [`[${timestamp}] ${logMessage}`, ...prev]);
 
-                // Update Tasks State
                 setTasks(prev => {
                     const newTasks = { ...prev };
-
-                    // 1. Remove from old location
                     let found = false;
                     for (const status of Object.keys(newTasks)) {
                         const idx = newTasks[status].findIndex(t => t.id === updatedTask.id);
                         if (idx !== -1) {
-                            newTasks[status] = [...newTasks[status]]; // copy array
-                            newTasks[status].splice(idx, 1); // remove
+                            newTasks[status] = [...newTasks[status]];
+                            newTasks[status].splice(idx, 1);
                             found = true;
                             break;
                         }
                     }
-
-                    // 2. Add to new location (based on updatedTask.status)
                     const targetStatus = updatedTask.status || 'inbox';
-                    if (!newTasks[targetStatus]) newTasks[targetStatus] = []; // safety check
-
-                    // We simply push to the end for now, or we could try to keep position
+                    if (!newTasks[targetStatus]) newTasks[targetStatus] = [];
                     newTasks[targetStatus] = [updatedTask, ...newTasks[targetStatus]];
-
                     return newTasks;
                 });
-
-                // Keep selection in sync
                 setSelectedTask(updatedTask);
             };
 
-            const handleCommand = (cmdText) => {
-                // Generate a random ID
+            const handleCreateTask = (title, desc = '') => {
                 const id = 'CT-' + Math.floor(100 + Math.random() * 900);
-                const title = cmdText; // Treat whole text as title for simplicity
 
                 const newTask = {
                     id,
                     status: 'inbox',
                     title,
                     priority: 'p3',
-                    priorityColor: 'bg-[#3B2E49] text-[#E0B0FF]',
-                    assignee: { initial: '?', color: 'bg-gray-700', name: 'Unassigned' },
-                    role: 'Unassigned',
-                    body: ''
+                    priorityColor: 'bg-purple-100 text-purple-800',
+                    assignee: { initial: '?', color: 'bg-gray-400', name: 'Unassigned' },
+                    role_owner: '',
+                    body: desc,
+                    timestamp_capture: new Date().toISOString()
                 };
 
-                // Add to Inbox
                 setTasks(prev => ({
                     ...prev,
                     inbox: [newTask, ...prev.inbox]
@@ -424,43 +938,74 @@ $ get tasks --assignee='@david'
                 setLogs(prev => [`[${timestamp}] Created Task #${id}: '${title}'`, ...prev]);
             };
 
+            const handleLinkClick = (taskId) => {
+                let foundTask = null;
+                for (const status of Object.keys(tasks)) {
+                    foundTask = tasks[status].find(t => t.id === taskId);
+                    if (foundTask) break;
+                }
+
+                if (foundTask) {
+                    setSelectedTask(foundTask);
+                } else {
+                    alert(`Task #${taskId} not found.`);
+                }
+            };
+
             return (
-                <div className="flex h-screen w-full font-mono">
-                    <Sidebar />
-                    <main className="flex-1 flex min-w-0">
-                        <KanbanBoard
-                            tasks={tasks}
-                            onTaskClick={setSelectedTask}
-                            onCommand={handleCommand}
-                            filterText={filterText}
-                            onFilterChange={setFilterText}
-                        />
-                        {selectedTask ? (
-                            <TaskDetail
-                                task={selectedTask}
-                                onClose={() => setSelectedTask(null)}
-                                onUpdate={handleTaskUpdate}
-                            />
-                        ) : (
-                            <InfoPanel logs={logs} />
-                        )}
-                    </main>
-                </div>
+                <DashboardLayout
+                    logs={logs}
+                    onUserClick={() => setShowProfile(true)}
+                    onQuickAdd={(title) => handleCreateTask(title)}
+                    onCreateFull={() => setShowCreateModal(true)}
+                >
+                     <Routes>
+                        <Route path="/" element={
+                            <>
+                                <KanbanBoard
+                                    tasks={tasks}
+                                    onTaskClick={setSelectedTask}
+                                    onFilterChange={setFilterText}
+                                    filterText={filterText}
+                                />
+                                {selectedTask && (
+                                    <TaskDetail
+                                        task={selectedTask}
+                                        onClose={() => setSelectedTask(null)}
+                                        onUpdate={handleTaskUpdate}
+                                        onLinkClick={handleLinkClick}
+                                    />
+                                )}
+                            </>
+                        } />
+                        <Route path="/inbox" element={
+                            <>
+                                <InboxPage tasks={tasks.inbox} onTaskClick={setSelectedTask} />
+                                {selectedTask && (
+                                    <TaskDetail
+                                        task={selectedTask}
+                                        onClose={() => setSelectedTask(null)}
+                                        onUpdate={handleTaskUpdate}
+                                        onLinkClick={handleLinkClick}
+                                    />
+                                )}
+                            </>
+                        } />
+                    </Routes>
+                    {showProfile && <UserProfileModal user={{name: 'Admin'}} onClose={() => setShowProfile(false)} />}
+                    {showCreateModal && <CreateTaskModal onClose={() => setShowCreateModal(false)} onCreate={handleCreateTask} />}
+                </DashboardLayout>
             );
         };
 
-        // --- APP ---
         const App = () => {
             return (
                 <MemoryRouter>
-                    <Routes>
-                        <Route path="/" element={<DashboardPage />} />
-                    </Routes>
+                    <DashboardPage />
                 </MemoryRouter>
             );
         };
 
-        // --- RENDER ---
         const container = document.getElementById('root');
         const root = createRoot(container);
         root.render(<App />);
