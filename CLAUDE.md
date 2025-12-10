@@ -89,10 +89,13 @@ CoreTerra 采用创新的混合持久化模型，兼顾数据完整性和查询�
 | `status` | Enum | `inbox \| active \| completed \| archived` |
 | `priority` | Integer | 1-5，5 为最高 |
 | `role_owner` | String | 任务的责任角色（**必填**，从 inbox 转为 active 的强制约束） |
+| `parent_id` | String (UUID, 可选) | 父任务的 ct_id。子任务是独立的任务实体，拥有完整的生命周期 |
 | `timestamp_capture` | DateTime (ISO 8601) | 任务被捕获的时间点 |
 | `timestamp_commitment` | DateTime (ISO 8601) | 任务被正式承诺执行的时间点 |
 | `timestamp_completion` | DateTime (ISO 8601) | 任务完成的时间点 |
 | `due_date` | Date (ISO 8601) | 承诺完成的目标日期 |
+
+**子任务设计说明**：系统中不存在"子任务"这一独立类型，只有"有 parent_id 的任务"和"没有 parent_id 的任务"。所有任务都是独立的实体，拥有完整的元数据和 C·O·R·E 生命周期。当在父任务中添加子任务时，会创建一个新的任务并自动进入 Inbox。
 
 详细数据模型定义请参考：`docs/2-data_schema.md`
 
