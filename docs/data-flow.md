@@ -24,19 +24,19 @@ graph TD
     end
 
     %% Flows
-    Input -->|POST /tasks/| Handler
-    Query -->|GET /tasks/| Handler
-    Mod -->|PATCH /tasks/{id}| Handler
-    History -->|GET /tasks/{id}/history| Handler
+    Input -->|"POST /tasks/"| Handler
+    Query -->|"GET /tasks/"| Handler
+    Mod -->|"PATCH /tasks/{id}"| Handler
+    History -->|"GET /tasks/{id}/history"| Handler
 
     %% Handler Interactions
-    Handler -->|1. Write .md| FS
+    Handler -->|1. Write task.md| FS
     FS -.->|2. Commit| Git
     Handler -->|3. Update Index| DB
 
-    Handler -->|Read Index (List)| DB
-    Handler -->|Read Content (Detail)| FS
-    Handler -->|Read Log| Git
+    Handler -->|"Read Index (List)"| DB
+    Handler -->|"Read Content (Detail)"| FS
+    Handler -->|"Read Log"| Git
 ```
 
 ## Detailed Data Flows
