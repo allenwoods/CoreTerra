@@ -26,9 +26,13 @@ def load_config() -> dict:
     }
 
     if config_path.exists():
-        with open(config_path) as f:
-            config = json.load(f)
-            defaults.update(config)
+        try:
+            with open(config_path) as f:
+                config = json.load(f)
+                defaults.update(config)
+        except json.JSONDecodeError as e:
+            print(f"Warning: Invalid JSON in {config_path}: {e}", file=sys.stderr)
+            print("Using default configuration.", file=sys.stderr)
 
     return defaults
 
