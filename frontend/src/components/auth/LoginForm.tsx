@@ -3,14 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useUserContext } from '@/context/UserContext';
 
 export default function LoginForm() {
   const navigate = useNavigate();
   const { login } = useUserContext();
   const [username, setUsername] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,18 +49,6 @@ export default function LoginForm() {
           {error}
         </div>
       )}
-
-      {/* Remember Me */}
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="remember"
-          checked={rememberMe}
-          onCheckedChange={(checked) => setRememberMe(checked === true)}
-        />
-        <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-          Remember me
-        </Label>
-      </div>
 
       {/* Submit Button */}
       <Button type="submit" className="w-full h-11" disabled={isLoading}>

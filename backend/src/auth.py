@@ -3,8 +3,12 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from src.users import get_user_by_username, get_all_users
 from src.schemas import Role
+from uuid import UUID
+import logging
 
 router = APIRouter(tags=["auth", "users"])
+
+logger = logging.getLogger(__name__)
 
 class LoginRequest(BaseModel):
     username: str
@@ -18,7 +22,7 @@ class LoginResponse(BaseModel):
     color: str
 
 class UserResponse(BaseModel):
-    id: str
+    user_id: str
     name: str
     email: str
     role: str
@@ -31,11 +35,24 @@ class RoleResponse(BaseModel):
 
 @router.post("/auth/login", response_model=LoginResponse)
 def login(request: LoginRequest):
-    """Login by username lookup in database."""
+    """
+    Login by username lookup in database.
+    WARNING: This is a prototype implementation with NO password verification.
+    TODO: Add password authentication and session tokens in future iteration.
+    """
+    logger.warning(f"Insecure login attempt for user: {request.username}")
+
     user = get_user_by_username(request.username)
 
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+
+    # Validate UUID integrity
+    try:
+        UUID(user["user_id"])
+    except ValueError:
+        logger.error(f"Invalid UUID for user {request.username}: {user['user_id']}")
+        raise HTTPException(status_code=500, detail="Internal data integrity error")
 
     return LoginResponse(
         user_id=user["user_id"],
@@ -56,7 +73,6 @@ def get_roles():
     """Get list of available roles."""
     # Convert Enum to list of objects compatible with frontend expectations
     # Frontend expects {id: string, name: string}
-    # We will format the enum values into readable names if possible, or just use the value
     roles = []
     for role in Role:
         # Convert kebab-case to Title Case for name

@@ -62,8 +62,17 @@ export const login = async (username: string): Promise<LoginResponse> => {
 };
 
 export const getUsers = async (): Promise<User[]> => {
-  const response = await api.get<User[]>('/users');
-  return response.data;
+  // Backend returns UserResponse { user_id, ... }
+  // We need to map it to User { id, ... }
+  const response = await api.get<any[]>('/users');
+  return response.data.map((u) => ({
+    id: u.user_id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    avatar: u.avatar,
+    color: u.color
+  }));
 };
 
 export const getRoles = async (): Promise<Role[]> => {

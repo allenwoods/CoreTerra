@@ -58,8 +58,8 @@ def get_all_users() -> List[Dict]:
     users = []
     for row in rows:
         users.append({
-            "id": row["user_id"], # Frontend expects 'id', backend stores 'user_id'
-            "name": row["username"], # Frontend expects 'name'
+            "user_id": row["user_id"], # Standardized to user_id
+            "name": row["username"],
             "email": row["email"],
             "role": row["role"],
             "avatar": row["avatar"],

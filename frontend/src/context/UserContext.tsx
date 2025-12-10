@@ -68,6 +68,7 @@ export function UserProvider({ children }: UserProviderProps) {
       const user: User = {
         id: data.user_id,
         name: data.username,
+        email: data.email,
         role: data.role,
         avatar: data.avatar,
         color: data.color

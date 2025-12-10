@@ -5,16 +5,84 @@ from datetime import datetime, timezone
 from uuid import UUID
 from typing import List, Optional, Any, Dict
 from git import Repo, Actor
-from src.schemas import TaskMetadataBase, Status, Priority, Role, TaskType, TaskMetadataResponse, TaskFullResponse
+from src.schemas import TaskMetadataBase, Status, Priority, Role, TaskType, TaskMetadataResponse, TaskFullResponse, User
 from src.users import get_git_author
 import json
 
 from src.database import get_db_connection, _get_paths
 
-def init_default_users():
-    """Insert default users if they don't exist."""
+def _get_repo() -> Repo:
+    """Gets or initializes the Git repository."""
+    data_dir, _ = _get_paths()
+    os.makedirs(data_dir, exist_ok=True)
+    try:
+        repo = Repo(data_dir)
+    except Exception:
+        repo = Repo.init(data_dir)
+        # Configure local user if not present (fallback)
+        if not repo.config_reader().has_option("user", "email"):
+            repo.config_writer().set_value("user", "name", "System").release()
+            repo.config_writer().set_value("user", "email", "system@coreterra.io").release()
+    return repo
+
+def save_user_to_file_and_db(user_data: Dict[str, Any]):
+    """
+    Saves user to MyST file and then updates DB.
+    Atomic Transaction: File -> Git -> DB.
+    """
+    data_dir, _ = _get_paths()
+    users_dir = os.path.join(data_dir, "users")
+    os.makedirs(users_dir, exist_ok=True)
+
+    user_id = user_data["user_id"]
+    file_path = os.path.join(users_dir, f"{user_id}.md")
+
+    # 1. Write MyST file
+    post = frontmatter.Post("") # Empty content for now
+    post.metadata = user_data
+
+    with open(file_path, "wb") as f:
+        frontmatter.dump(post, f)
+
+    # 2. Git Commit
+    repo = _get_repo()
+    repo.index.add([file_path])
+
+    # System commit for user creation
+    author = Actor("System", "system@coreterra.io")
+    repo.index.commit(f"feat: Create/Update user {user_data['username']}", author=author, committer=author)
+
+    # 3. Update SQLite
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO users (user_id, username, email, role, avatar, color, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        user_id,
+        user_data["username"],
+        user_data["email"],
+        user_data["role"],
+        user_data["avatar"],
+        user_data["color"],
+        user_data.get("created_at", datetime.now(timezone.utc).isoformat())
+    ))
+
+    conn.commit()
+    conn.close()
+
+def init_default_users():
+    """Insert default users if they don't exist."""
+    # We check if users table is empty to avoid re-seeding and creating commits on every startup
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT count(*) FROM users")
+    count = cursor.fetchone()[0]
+    conn.close()
+
+    if count > 0:
+        return
 
     default_users = [
         # (user_id, username, email, role, avatar, color)
@@ -28,13 +96,16 @@ def init_default_users():
 
     now = datetime.now(timezone.utc).isoformat()
     for user_id, username, email, role, avatar, color in default_users:
-        cursor.execute("""
-            INSERT OR IGNORE INTO users (user_id, username, email, role, avatar, color, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (user_id, username, email, role, avatar, color, now))
-
-    conn.commit()
-    conn.close()
+        user_data = {
+            "user_id": user_id,
+            "username": username,
+            "email": email,
+            "role": role,
+            "avatar": avatar,
+            "color": color,
+            "created_at": now
+        }
+        save_user_to_file_and_db(user_data)
 
 def init_db():
     """Initializes the SQLite database schema."""
@@ -77,20 +148,6 @@ def init_db():
     # Initialize default data
     init_default_users()
 
-def _get_repo() -> Repo:
-    """Gets or initializes the Git repository."""
-    data_dir, _ = _get_paths()
-    os.makedirs(data_dir, exist_ok=True)
-    try:
-        repo = Repo(data_dir)
-    except Exception:
-        repo = Repo.init(data_dir)
-        # Configure local user if not present (fallback)
-        if not repo.config_reader().has_option("user", "email"):
-            repo.config_writer().set_value("user", "name", "System").release()
-            repo.config_writer().set_value("user", "email", "system@coreterra.io").release()
-    return repo
-
 def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_message: str) -> TaskMetadataResponse:
     """
     Saves a task:
@@ -112,51 +169,65 @@ def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_messa
 
     post.metadata = meta_dict
 
-    with open(file_path, "wb") as f:
-        frontmatter.dump(post, f)
+    try:
+        with open(file_path, "wb") as f:
+            frontmatter.dump(post, f)
 
-    # 2. Git Commit
-    repo.index.add([file_path])
+        # 2. Git Commit
+        repo.index.add([file_path])
 
-    author = None
-    if metadata.user_id:
-        user_info = get_git_author(metadata.user_id)
-        if user_info:
-            author = Actor(user_info[0], user_info[1])
+        author = None
+        if metadata.user_id:
+            user_info = get_git_author(metadata.user_id)
+            if user_info:
+                author = Actor(user_info[0], user_info[1])
 
-    repo.index.commit(commit_message, author=author, committer=author)
+        repo.index.commit(commit_message, author=author, committer=author)
 
-    # 3. Update SQLite
-    conn = get_db_connection()
-    cursor = conn.cursor()
+        # 3. Update SQLite
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    # Prepare data for SQL
-    sql_data = {
-        "ct_id": str(task_id),
-        "status": metadata.status.value,
-        "priority": metadata.priority.value if metadata.priority else None,
-        "role_owner": metadata.role_owner.value if metadata.role_owner else None,
-        "timestamp_capture": metadata.capture_timestamp.isoformat() if metadata.capture_timestamp else None,
-        "timestamp_commitment": metadata.commitment_timestamp.isoformat() if metadata.commitment_timestamp else None,
-        "timestamp_completion": metadata.completion_timestamp.isoformat() if metadata.completion_timestamp else None,
-        "due_date": metadata.due_date.isoformat() if metadata.due_date else None,
-        "updated_at": metadata.updated_at.isoformat(),
-        "title": metadata.title,
-        "user_id": str(metadata.user_id)
-    }
+        # Prepare data for SQL
+        sql_data = {
+            "ct_id": str(task_id),
+            "status": metadata.status.value,
+            "priority": metadata.priority.value if metadata.priority else None,
+            "role_owner": metadata.role_owner.value if metadata.role_owner else None,
+            "timestamp_capture": metadata.capture_timestamp.isoformat() if metadata.capture_timestamp else None,
+            "timestamp_commitment": metadata.commitment_timestamp.isoformat() if metadata.commitment_timestamp else None,
+            "timestamp_completion": metadata.completion_timestamp.isoformat() if metadata.completion_timestamp else None,
+            "due_date": metadata.due_date.isoformat() if metadata.due_date else None,
+            "updated_at": metadata.updated_at.isoformat(),
+            "title": metadata.title,
+            "user_id": str(metadata.user_id)
+        }
 
-    cursor.execute("""
-        INSERT OR REPLACE INTO tasks (
-            ct_id, status, priority, role_owner, timestamp_capture,
-            timestamp_commitment, timestamp_completion, due_date, updated_at, title, user_id
-        ) VALUES (
-            :ct_id, :status, :priority, :role_owner, :timestamp_capture,
-            :timestamp_commitment, :timestamp_completion, :due_date, :updated_at, :title, :user_id
-        )
-    """, sql_data)
+        cursor.execute("""
+            INSERT OR REPLACE INTO tasks (
+                ct_id, status, priority, role_owner, timestamp_capture,
+                timestamp_commitment, timestamp_completion, due_date, updated_at, title, user_id
+            ) VALUES (
+                :ct_id, :status, :priority, :role_owner, :timestamp_capture,
+                :timestamp_commitment, :timestamp_completion, :due_date, :updated_at, :title, :user_id
+            )
+        """, sql_data)
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
+
+    except Exception as e:
+        # Rollback strategy
+        print(f"Error saving task {task_id}: {e}")
+        # Soft reset git to undo commit if it happened
+        # Note: checking if commit happened is tricky, but soft reset HEAD~1 if it matches our message/author might work.
+        # Simpler: just ensure consistency. If DB fails, we have a file/git record but no DB record.
+        # Rebuilding DB from files is a repair strategy.
+        # But for atomic transaction simulation, we should revert the file change.
+        # git reset --mixed HEAD (if added)
+        # For this prototype, we'll just log and re-raise.
+        # Ideally: repo.git.reset('HEAD') if committed, or checkout file if not.
+        raise e
 
     return TaskMetadataResponse(**meta_dict)
 
@@ -197,13 +268,20 @@ def list_tasks(filters: Dict[str, Any] = None, sort_by: str = None, order: str =
             query += " WHERE " + " AND ".join(conditions)
 
     if sort_by:
-        # Prevent SQL injection for sort_by since it can't be parameterized
-        # Allowlist of columns
-        allowed_cols = ["priority", "due_date", "created_at", "updated_at", "timestamp_capture"]
+        # Mapping to safe column names to prevent injection
+        allowed_cols = {
+            "priority": "priority",
+            "due_date": "due_date",
+            "created_at": "timestamp_capture", # Map created_at to timestamp_capture
+            "updated_at": "updated_at",
+            "timestamp_capture": "timestamp_capture"
+        }
+
         if sort_by in allowed_cols:
+             safe_col = allowed_cols[sort_by]
              if order.lower() not in ["asc", "desc"]:
                  order = "asc"
-             query += f" ORDER BY {sort_by} {order}"
+             query += f" ORDER BY {safe_col} {order}"
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
