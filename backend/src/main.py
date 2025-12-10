@@ -5,6 +5,7 @@ from src.capture import router as capture_router
 from src.clarify import router as clarify_router
 from src.organize import router as organize_router
 from src.review import router as review_router
+from src.auth import router as auth_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,6 +21,7 @@ app.include_router(capture_router)
 app.include_router(clarify_router)
 app.include_router(organize_router)
 app.include_router(review_router)
+app.include_router(auth_router)
 
 @app.get("/health")
 def health_check():
