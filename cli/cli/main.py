@@ -3,13 +3,23 @@ import httpx
 from typing import Optional, List
 from cli.core import config
 from enum import Enum
+import sys
+import os
 
-class Priority(str, Enum):
-    P1 = "1"
-    P2 = "2"
-    P3 = "3"
-    P4 = "4"
-    P5 = "5"
+# Add repo root to sys.path to allow importing backend
+# This is a hack for the MVP to share schemas
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+
+try:
+    from backend.src.schemas import Priority
+except ImportError:
+    # Fallback if backend is not available (e.g. installed as standalone CLI)
+    class Priority(str, Enum):
+        P1 = "1"
+        P2 = "2"
+        P3 = "3"
+        P4 = "4"
+        P5 = "5"
 
 app = typer.Typer()
 
