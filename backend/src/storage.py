@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import frontmatter
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 from typing import List, Optional, Any, Dict
 from git import Repo, Actor
@@ -9,24 +9,39 @@ from src.schemas import TaskMetadataBase, Status, Priority, Role, TaskType, Task
 from src.users import get_git_author
 import json
 
-# Helper to get paths dynamically
-def _get_paths():
-    data_dir = os.getenv("CORETERRA_DATA_DIR", "/tmp/coreterra-data")
-    db_path = os.getenv("CORETERRA_DB_PATH", os.path.join(data_dir, "coreterra.db"))
-    return data_dir, db_path
+from src.database import get_db_connection, _get_paths
 
-def _get_db_connection():
-    """Establishes a connection to the SQLite database."""
-    data_dir, db_path = _get_paths()
-    os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
+def init_default_users():
+    """Insert default users if they don't exist."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    default_users = [
+        # (user_id, username, email, role, avatar, color)
+        ("550e8400-e29b-41d4-a716-446655440000", "Test User", "test@example.com", "backend-engineer", "https://i.pravatar.cc/150?u=test", "bg-gray-500"),
+        ("u1", "Alex", "alex@coreterra.io", "frontend-engineer", "https://i.pravatar.cc/150?u=alex", "bg-blue-500"),
+        ("u2", "Brenda", "brenda@coreterra.io", "devops-engineer", "https://i.pravatar.cc/150?u=brenda", "bg-purple-500"),
+        ("u3", "Charles", "charles@coreterra.io", "backend-engineer", "https://i.pravatar.cc/150?u=charles", "bg-red-500"),
+        ("u4", "David", "david@coreterra.io", "backend-engineer", "https://i.pravatar.cc/150?u=david", "bg-green-500"),
+        ("u5", "Sarah", "sarah@coreterra.io", "ui-designer", "https://i.pravatar.cc/150?u=sarah", "bg-yellow-500"),
+    ]
+
+    now = datetime.now(timezone.utc).isoformat()
+    for user_id, username, email, role, avatar, color in default_users:
+        cursor.execute("""
+            INSERT OR IGNORE INTO users (user_id, username, email, role, avatar, color, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (user_id, username, email, role, avatar, color, now))
+
+    conn.commit()
+    conn.close()
 
 def init_db():
     """Initializes the SQLite database schema."""
-    conn = _get_db_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Create Tasks Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             ct_id TEXT PRIMARY KEY,
@@ -42,8 +57,25 @@ def init_db():
             user_id TEXT
         )
     """)
+
+    # Create Users Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            user_id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            role TEXT NOT NULL,
+            avatar TEXT,
+            color TEXT,
+            created_at TEXT NOT NULL
+        )
+    """)
+
     conn.commit()
     conn.close()
+
+    # Initialize default data
+    init_default_users()
 
 def _get_repo() -> Repo:
     """Gets or initializes the Git repository."""
@@ -95,7 +127,7 @@ def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_messa
     repo.index.commit(commit_message, author=author, committer=author)
 
     # 3. Update SQLite
-    conn = _get_db_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # Prepare data for SQL
@@ -149,7 +181,7 @@ def get_task(task_id: UUID) -> Optional[TaskFullResponse]:
 
 def list_tasks(filters: Dict[str, Any] = None, sort_by: str = None, order: str = "asc") -> List[TaskMetadataResponse]:
     """Lists tasks from SQLite index."""
-    conn = _get_db_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     query = "SELECT * FROM tasks"

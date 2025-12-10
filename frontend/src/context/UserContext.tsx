@@ -1,13 +1,16 @@
-import { createContext, useContext } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User } from '@/types/user';
 import type { Role } from '@/types/role';
-import { initialUsers, roles } from '@/lib/mockData';
+import { getUsers, getRoles, login as apiLogin, type LoginResponse } from '@/lib/api';
 
 interface UserContextType {
-  currentUser: User;
+  currentUser: User | null;
   users: User[];
   roles: Role[];
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (username: string) => Promise<void>;
+  logout: () => void;
   getUserById: (userId: string) => User | undefined;
   getRoleById: (roleId: string) => Role | undefined;
 }
@@ -19,12 +22,74 @@ interface UserProviderProps {
 }
 
 export function UserProvider({ children }: UserProviderProps) {
-  // In a real app, currentUser would come from authentication
-  // For now, we'll use the first user as the current user
-  const currentUser = initialUsers[0];
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load initial data and check auth status
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // Fetch metadata
+        const [usersData, rolesData] = await Promise.all([getUsers(), getRoles()]);
+        setUsers(usersData);
+        setRoles(rolesData);
+
+        // Check local storage for session
+        const storedUserId = localStorage.getItem('user_id');
+        if (storedUserId) {
+          // Find user in the fetched list to restore session
+          const user = usersData.find(u => u.id === storedUserId);
+          if (user) {
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+          } else {
+            // Invalid session
+            localStorage.removeItem('user_id');
+          }
+        }
+      } catch (error) {
+        console.error("Failed to initialize UserContext:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    init();
+  }, []);
+
+  const login = async (username: string) => {
+    try {
+      const data: LoginResponse = await apiLogin(username);
+
+      // Map response to User object
+      const user: User = {
+        id: data.user_id,
+        name: data.username,
+        role: data.role,
+        avatar: data.avatar,
+        color: data.color
+      };
+
+      localStorage.setItem('user_id', user.id);
+      setCurrentUser(user);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('user_id');
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+  };
 
   const getUserById = (userId: string): User | undefined => {
-    return initialUsers.find((u) => u.id === userId);
+    return users.find((u) => u.id === userId);
   };
 
   const getRoleById = (roleId: string): Role | undefined => {
@@ -33,8 +98,12 @@ export function UserProvider({ children }: UserProviderProps) {
 
   const value: UserContextType = {
     currentUser,
-    users: initialUsers,
+    users,
     roles,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
     getUserById,
     getRoleById,
   };

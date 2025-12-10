@@ -21,10 +21,10 @@ class Priority(str, Enum):
 
 class Role(str, Enum):
     BACKEND_ENGINEER = "backend-engineer"
-    FRONTEND_DEV = "frontend-dev"
-    ARCHIVIST = "archivist"
-    BACKEND_LEAD = "backend-lead"
-    # Add other roles as needed
+    FRONTEND_ENGINEER = "frontend-engineer"
+    UI_DESIGNER = "ui-designer"
+    DEVOPS_ENGINEER = "devops-engineer"
+    PRODUCT_MANAGER = "product-manager"
 
 class TaskType(str, Enum):
     CAPTURE = "Capture"
@@ -37,7 +37,9 @@ class User(BaseModel):
     user_id: UUID4
     username: str
     email: str
-    roles: List[Role]
+    role: Role
+    avatar: str
+    color: str
     body: Optional[str] = None # Added body to support MyST markdown mapping
 
 class TaskMetadataBase(BaseModel):

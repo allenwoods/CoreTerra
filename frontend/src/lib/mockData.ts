@@ -1,23 +1,7 @@
-import type { Role } from '@/types/role';
-import type { User } from '@/types/user';
+// Temporary mock data until tasks API is fully integrated
+// This file only contains Tasks data now. Users and Roles are fetched from API.
+
 import type { TasksByStatus } from '@/types/task';
-
-// Roles & Users
-export const roles: Role[] = [
-  { id: 'backend-engineer', name: 'Backend Engineer' },
-  { id: 'frontend-engineer', name: 'Frontend Engineer' },
-  { id: 'ui-designer', name: 'UI Designer' },
-  { id: 'devops-engineer', name: 'DevOps Engineer' },
-  { id: 'product-manager', name: 'Product Manager' },
-];
-
-export const initialUsers: User[] = [
-  { id: 'u1', name: 'Alex', role: 'frontend-engineer', avatar: 'https://i.pravatar.cc/150?u=alex', color: 'bg-blue-500' },
-  { id: 'u2', name: 'Brenda', role: 'devops-engineer', avatar: 'https://i.pravatar.cc/150?u=brenda', color: 'bg-purple-500' },
-  { id: 'u3', name: 'Charles', role: 'backend-engineer', avatar: 'https://i.pravatar.cc/150?u=charles', color: 'bg-red-500' },
-  { id: 'u4', name: 'David', role: 'backend-engineer', avatar: 'https://i.pravatar.cc/150?u=david', color: 'bg-green-500' },
-  { id: 'u5', name: 'Sarah', role: 'ui-designer', avatar: 'https://i.pravatar.cc/150?u=sarah', color: 'bg-yellow-500' },
-];
 
 // Initial Tasks
 export const initialTasks: TasksByStatus = {
