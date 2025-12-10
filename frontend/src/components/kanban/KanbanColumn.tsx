@@ -20,7 +20,7 @@ export default function KanbanColumn({
   const MoreIcon = getIcon('more_horiz');
 
   return (
-    <div className="w-[320px] flex-shrink-0 flex flex-col bg-gray-50/50 rounded-xl h-full">
+    <div className="w-[280px] sm:w-[320px] flex-shrink-0 flex flex-col bg-gray-50/50 rounded-xl h-full min-h-[400px]">
       {/* Column Header */}
       <div className="flex items-center justify-between p-3 pb-2">
         <div className="flex items-center gap-2">
@@ -37,9 +37,15 @@ export default function KanbanColumn({
       </div>
 
       {/* Tasks List */}
-      <div className="flex flex-col gap-3 overflow-y-auto px-2 pb-4 flex-1">
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} isDone={isDone} onClick={onTaskClick} />
+      <div className="flex flex-col gap-3 overflow-y-auto px-2 pb-4 flex-1 scrollbar-thin">
+        {tasks.map((task, index) => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            isDone={isDone}
+            onClick={onTaskClick}
+            style={{ animationDelay: `${index * 50}ms` }}
+          />
         ))}
         {tasks.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-400 text-sm">

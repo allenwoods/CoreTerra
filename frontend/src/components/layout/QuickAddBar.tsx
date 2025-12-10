@@ -44,19 +44,19 @@ export default function QuickAddBar({ onCommand, onExpand }: QuickAddBarProps) {
   }, [onExpand]);
 
   return (
-    <div className="h-16 border-t border-gray-200 bg-white flex items-center px-6 gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+    <div className="h-14 sm:h-16 border-t border-gray-200 bg-white flex items-center px-3 sm:px-6 gap-2 sm:gap-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
       <div className="flex-1 relative">
         <PlusCircleIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-primary h-5 w-5" />
         <input
           ref={inputRef}
-          className="w-full bg-gray-50 border border-gray-200 rounded-lg h-10 pl-10 pr-24 text-gray-900 placeholder:text-gray-400 focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
-          placeholder="快速添加任务到收件箱... (⌘K 聚焦, Shift+Enter 展开)"
+          className="w-full bg-gray-50 border border-gray-200 rounded-lg h-10 pl-10 pr-12 sm:pr-24 text-gray-900 placeholder:text-gray-400 focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+          placeholder="快速添加任务..."
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          <span className="text-xs text-gray-400 hidden sm:inline">⌘⇧N</span>
+          <span className="text-xs text-gray-400 hidden lg:inline">⌘⇧N</span>
           <button
             onClick={() => onExpand?.(command || undefined)}
             className="text-gray-400 hover:text-primary p-1 rounded-md hover:bg-gray-100 transition-colors"

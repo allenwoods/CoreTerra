@@ -28,12 +28,15 @@ export default function DashboardLayout({
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 relative">
+        {/* Mobile header spacer for menu button */}
+        <div className="h-14 md:hidden flex-shrink-0" />
+
         <div className="flex-1 flex min-h-0 relative">
           {/* Page Content from Routes */}
           <Outlet />
 
-          {/* Toggle Button (when InfoPanel is closed) */}
-          <div className="absolute right-4 top-4 z-10">
+          {/* Toggle Button (when InfoPanel is closed) - hidden on mobile */}
+          <div className="absolute right-4 top-4 z-10 hidden lg:block">
             {!infoPanelOpen && (
               <button
                 onClick={() => setInfoPanelOpen(true)}
@@ -45,8 +48,10 @@ export default function DashboardLayout({
             )}
           </div>
 
-          {/* Right Info Panel */}
-          <InfoPanel logs={activityLog} visible={infoPanelOpen} onToggle={() => setInfoPanelOpen(!infoPanelOpen)} />
+          {/* Right Info Panel - hidden on mobile */}
+          <div className="hidden lg:block">
+            <InfoPanel logs={activityLog} visible={infoPanelOpen} onToggle={() => setInfoPanelOpen(!infoPanelOpen)} />
+          </div>
         </div>
 
         {/* Bottom Quick Add Bar */}

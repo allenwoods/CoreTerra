@@ -39,7 +39,7 @@ export default function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
       {/* Header with Search and View Toggle */}
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         {/* Search Bar */}
         <div className="relative flex-1 max-w-md">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -53,7 +53,7 @@ export default function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
         </div>
 
         {/* View Toggle */}
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="flex bg-gray-100 p-1 rounded-lg self-start sm:self-auto">
           <button
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
               view === 'board'
@@ -79,7 +79,7 @@ export default function KanbanBoard({ tasks, onTaskClick }: KanbanBoardProps) {
 
       {/* Board View */}
       {view === 'board' ? (
-        <div className="flex-1 p-6 flex gap-6 overflow-x-auto bg-gray-50/30">
+        <div className="flex-1 p-4 sm:p-6 flex gap-4 sm:gap-6 overflow-x-auto bg-gray-50/30 scrollbar-thin">
           <KanbanColumn
             title="Next"
             count={filteredTasks.next.length}

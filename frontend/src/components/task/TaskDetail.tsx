@@ -135,7 +135,14 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   const canMoveToBoard = roleOwner && dueDate;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[500px] bg-white shadow-xl border-l border-gray-200 flex flex-col z-50">
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/20 z-40 animate-in fade-in duration-200"
+        onClick={onClose}
+      />
+      {/* Panel - full screen on mobile, slide panel on desktop */}
+      <div className="fixed inset-0 sm:inset-y-0 sm:right-0 sm:left-auto sm:w-[500px] bg-white shadow-xl sm:border-l border-gray-200 flex flex-col z-50 animate-in fade-in sm:slide-in-from-right duration-300">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center gap-3">
@@ -461,7 +468,8 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

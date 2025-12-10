@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, type CSSProperties } from 'react';
+import { Link2 } from 'lucide-react';
 import type { Task } from '@/types/task';
 import { getIcon } from '@/lib/iconMap';
 
@@ -6,18 +7,29 @@ interface TaskCardProps {
   task: Task;
   isDone?: boolean;
   onClick: (task: Task) => void;
+  style?: CSSProperties;
 }
 
-function TaskCard({ task, isDone = false, onClick }: TaskCardProps) {
+function TaskCard({ task, isDone = false, onClick, style }: TaskCardProps) {
   const EditIcon = getIcon('edit_document');
+  const hasSubtaskIndicator = task.parent_id;
 
   return (
     <div
       onClick={() => onClick(task)}
+      style={style}
       className={`bg-white border border-gray-200 p-3 rounded-lg cursor-pointer ${
         isDone ? 'opacity-60' : ''
-      } hover:border-primary hover:shadow-md transition-all duration-200 shadow-sm group`}
+      } hover:border-primary hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 shadow-sm group animate-in fade-in slide-in-from-bottom-2`}
     >
+      {/* Subtask indicator */}
+      {hasSubtaskIndicator && (
+        <div className="flex items-center gap-1 text-xs text-blue-500 mb-1.5">
+          <Link2 className="w-3 h-3" />
+          <span>子任务</span>
+        </div>
+      )}
+
       {/* Title and Edit Icon */}
       <div className="flex justify-between items-start mb-2">
         <p
@@ -27,7 +39,7 @@ function TaskCard({ task, isDone = false, onClick }: TaskCardProps) {
         >
           {task.title}
         </p>
-        <EditIcon className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors ml-2 flex-shrink-0" />
+        <EditIcon className="h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors ml-2 flex-shrink-0 opacity-0 group-hover:opacity-100" />
       </div>
 
       {/* Metadata Footer */}

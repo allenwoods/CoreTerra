@@ -1,20 +1,24 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Menu, X } from 'lucide-react';
 import { getIcon } from '@/lib/iconMap';
+import { Button } from '@/components/ui/button';
 
 interface NavLinkProps {
   icon: string;
   text: string;
   to: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
-const NavLink = ({ icon, text, to, active = false }: NavLinkProps) => {
+const NavLink = ({ icon, text, to, active = false, onClick }: NavLinkProps) => {
   const Icon = getIcon(icon);
 
   return (
     <Link
       to={to}
+      onClick={onClick}
       className={`flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md transition-colors ${
         active
           ? 'bg-gray-100 text-gray-900 font-medium'
@@ -73,12 +77,29 @@ interface SidebarProps {
 
 export default function Sidebar({ onUserClick }: SidebarProps) {
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const FolderIcon = getIcon('folder_managed');
   const SettingsIcon = getIcon('settings');
   const HelpIcon = getIcon('help');
 
-  return (
-    <aside className="w-[260px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  const closeMobileMenu = () => setMobileOpen(false);
+
+  const sidebarContent = (
+    <>
       {/* User Info Section */}
       <div className="p-4 border-b border-gray-100 flex items-center gap-3">
         <div
@@ -87,7 +108,10 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
             backgroundImage:
               'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSOR72eK1H5cCfSa1I3VSaTQGtjYThNG9XIAbrPmHmFGdwj00ApRaoTp5Thj60nEoKEszuJwFg5I_T1xNWHmuBA5dTPbJxhBlQeksRAA8fXppcaZQEAnayvUoputQ0j8H5kRMKpnLtwG51hcZPEMZq-ijB2VVeRl3yxDmQU4x5oMoL-rpqbRiGe1AKLw7NH3sSbrD-RLgacDfcn4Hh-LaOER-CuWCCK0Klz7i97I48cXYBCuj3HDs_xqM-R-8IdlhlKq0gt9QIMEYB")',
           }}
-          onClick={() => onUserClick?.()}
+          onClick={() => {
+            onUserClick?.();
+            closeMobileMenu();
+          }}
         ></div>
         <div className="flex flex-col">
           <h1 className="text-gray-900 font-semibold text-sm">CoreTerra</h1>
@@ -96,9 +120,21 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
       </div>
 
       {/* Navigation Links */}
-      <div className="flex flex-col gap-1 p-3">
-        <NavLink icon="dashboard" text="Kanban" to="/" active={location.pathname === '/'} />
-        <NavLink icon="inbox" text="Inbox" to="/inbox" active={location.pathname === '/inbox'} />
+      <div className="flex flex-col gap-1 p-3 flex-1 overflow-y-auto scrollbar-thin">
+        <NavLink
+          icon="dashboard"
+          text="Kanban"
+          to="/"
+          active={location.pathname === '/'}
+          onClick={closeMobileMenu}
+        />
+        <NavLink
+          icon="inbox"
+          text="Inbox"
+          to="/inbox"
+          active={location.pathname === '/inbox'}
+          onClick={closeMobileMenu}
+        />
 
         <button className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900">
           <FolderIcon className="h-5 w-5" />
@@ -128,6 +164,47 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
           <p className="text-sm">Help</p>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile menu button - only visible on small screens */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-3 left-3 z-50 md:hidden"
+        onClick={() => setMobileOpen(!mobileOpen)}
+      >
+        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in duration-200"
+          onClick={closeMobileMenu}
+        />
+      )}
+
+      {/* Mobile sidebar */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-40 w-[280px] bg-white border-r border-gray-200
+          flex flex-col h-full transform transition-transform duration-300 ease-in-out
+          md:hidden
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
+        {/* Close button area at top for mobile */}
+        <div className="h-14" />
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar - always visible on md+ screens */}
+      <aside className="hidden md:flex w-[260px] flex-shrink-0 bg-white border-r border-gray-200 flex-col h-full">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

@@ -28,8 +28,9 @@ ct_id	String	UUID v4	全局唯一标识符 (UUID)，用于精确关联文件与�
 status	Enum	inbox | active | completed | archived	任务的当前生命周期状态。此状态机是我们工作流的基础，反映了任务管理最佳实践中类似看板的阶段。	结构化的状态流是流程挖掘的基础，使 AI 能够识别状态转换模式、瓶颈和异常。
 priority	Integer	1-5	任务的优先级，5 为最高。用于排序和工作 triage。	为 AI 提供了量化的重要性信号，可用于预测任务延期风险或推荐优先处理项。
 role_owner	String	Kebab-case string (e.g., 'backend-engineer')	任务的责任角色。基于角色的分配比分配到具体个人更具扩展性和灵活性。	帮助 AI 理解组织内的责任流转模式，可用于分析不同角色的工作负载和效率。
-timestamp_capture	DateTime	ISO 8601	任务被“捕获”或创建的精确时间点，标志着一个想法或需求的正式记录。	定义了任务生命周期的起点，是计算规划延迟和整体周期的关键时间戳。
-timestamp_commitment	DateTime	ISO 8601	任务被正式“承诺”执行的时间点，例如状态从 inbox 变为 active。	衡量从认知到行动的转化效率。AI 可分析此延迟，识别决策瓶颈。
+parent_id	String	UUID v4 (可为空)	父任务的 ct_id。如果设置，此任务是父任务的子任务。子任务是独立的任务实体，拥有完整的元数据和生命周期。	使 AI 能够理解任务的层级关系，支持工作分解结构（WBS）分析和依赖关系推理。
+timestamp_capture	DateTime	ISO 8601	任务被"捕获"或创建的精确时间点，标志着一个想法或需求的正式记录。	定义了任务生命周期的起点，是计算规划延迟和整体周期的关键时间戳。
+timestamp_commitment	DateTime	ISO 8601	任务被正式"承诺"执行的时间点，例如状态从 inbox 变为 active。	衡量从认知到行动的转化效率。AI 可分析此延迟，识别决策瓶颈。
 timestamp_completion	DateTime	ISO 8601	任务状态首次变更为 completed 的精确时间点。	这是计算交付可靠性的核心数据点，使 AI 能够精确评估承诺的兑现情况。
 due_date	Date	ISO 8601 (YYYY-MM-DD) (可为空)	承诺完成的目标日期。这是衡量承诺准确率的基准。	为 AI 提供了明确的预期目标，是训练预测模型和评估执行偏差的关键特征。
 
@@ -48,6 +49,7 @@ ct_id	TEXT	PRIMARY KEY	ct_id
 status	TEXT		status
 priority	INTEGER		priority
 role_owner	TEXT		role_owner
+parent_id	TEXT	FOREIGN KEY REFERENCES tasks(ct_id)	parent_id
 timestamp_capture	TEXT		timestamp_capture
 timestamp_commitment	TEXT		timestamp_commitment
 timestamp_completion	TEXT		timestamp_completion

@@ -4,6 +4,7 @@ import { TaskProvider, useTaskContext } from '@/context/TaskContext';
 import { UserProvider } from '@/context/UserContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CreateTaskModal from '@/components/task/CreateTaskModal';
+import UserProfileModal from '@/components/user/UserProfileModal';
 import KanbanPage from '@/pages/KanbanPage';
 import InboxPage from '@/pages/InboxPage';
 
@@ -11,9 +12,10 @@ function AppRoutes() {
   const { createTask } = useTaskContext();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createModalTitle, setCreateModalTitle] = useState('');
+  const [userModalOpen, setUserModalOpen] = useState(false);
 
   const handleUserClick = () => {
-    console.log('User clicked - UserProfileModal will be implemented in Phase 8');
+    setUserModalOpen(true);
   };
 
   const handleQuickAdd = (title: string) => {
@@ -47,6 +49,11 @@ function AppRoutes() {
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         initialTitle={createModalTitle}
+      />
+
+      <UserProfileModal
+        open={userModalOpen}
+        onOpenChange={setUserModalOpen}
       />
     </>
   );
