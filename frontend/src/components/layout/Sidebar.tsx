@@ -79,7 +79,6 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const FolderIcon = getIcon('folder_managed');
-  const SettingsIcon = getIcon('settings');
   const HelpIcon = getIcon('help');
 
   // Close mobile menu on route change
@@ -155,10 +154,13 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
 
       {/* Bottom Settings */}
       <div className="mt-auto flex flex-col gap-1 p-3 border-t border-gray-100">
-        <button className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900">
-          <SettingsIcon className="h-5 w-5" />
-          <p className="text-sm">Settings</p>
-        </button>
+        <NavLink
+          icon="settings"
+          text="Settings"
+          to="/settings"
+          active={location.pathname === '/settings'}
+          onClick={closeMobileMenu}
+        />
         <button className="flex items-center gap-3 px-3 py-2 cursor-pointer rounded-md transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900">
           <HelpIcon className="h-5 w-5" />
           <p className="text-sm">Help</p>

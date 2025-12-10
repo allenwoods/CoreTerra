@@ -7,6 +7,8 @@ import CreateTaskModal from '@/components/task/CreateTaskModal';
 import UserProfileModal from '@/components/user/UserProfileModal';
 import KanbanPage from '@/pages/KanbanPage';
 import InboxPage from '@/pages/InboxPage';
+import LoginPage from '@/pages/LoginPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 function AppRoutes() {
   const { createTask } = useTaskContext();
@@ -30,6 +32,10 @@ function AppRoutes() {
   return (
     <>
       <Routes>
+        {/* Standalone pages (no DashboardLayout) */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Dashboard pages */}
         <Route
           element={
             <DashboardLayout
@@ -41,6 +47,7 @@ function AppRoutes() {
         >
           <Route path="/" element={<KanbanPage />} />
           <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
