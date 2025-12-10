@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from src.storage import init_db
 from src.capture import router as capture_router
@@ -15,6 +16,18 @@ async def lifespan(app: FastAPI):
     # Shutdown: Clean up if needed
 
 app = FastAPI(title="CoreTerra Backend", lifespan=lifespan)
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite dev server
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include Routers
 app.include_router(capture_router)

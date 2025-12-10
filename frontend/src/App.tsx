@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { TaskProvider, useTaskContext } from '@/context/TaskContext';
 import { UserProvider } from '@/context/UserContext';
@@ -9,6 +9,7 @@ import KanbanPage from '@/pages/KanbanPage';
 import InboxPage from '@/pages/InboxPage';
 import LoginPage from '@/pages/LoginPage';
 import SettingsPage from '@/pages/SettingsPage';
+import { checkHealth } from '@/lib/api';
 
 function AppRoutes() {
   const { createTask } = useTaskContext();
@@ -67,6 +68,14 @@ function AppRoutes() {
 }
 
 function App() {
+  // TODO: Remove this verification code after Plan 01 is verified
+  useEffect(() => {
+    console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+    checkHealth()
+      .then((data) => console.log('Health check passed:', data))
+      .catch((err) => console.error('Health check failed:', err));
+  }, []);
+
   return (
     <BrowserRouter>
       <UserProvider>
