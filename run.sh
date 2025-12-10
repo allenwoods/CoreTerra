@@ -98,7 +98,28 @@ print_status "  - npm: $(npm --version)"
 echo ""
 
 ################################################################################
-# Step 2: Install backend dependencies
+# Step 2: Load environment configuration
+################################################################################
+print_status "Loading environment configuration..."
+
+# Run load_env.py to generate frontend/.env and export shell variables
+# The script uses defaults if ~/.coreterra/config.json doesn't exist
+eval $(uv run python backend/scripts/load_env.py)
+
+if [ -f "$HOME/.coreterra/config.json" ]; then
+    print_success "Environment loaded from ~/.coreterra/config.json"
+else
+    print_warning "No config file found at ~/.coreterra/config.json, using defaults"
+fi
+
+print_status "  - VITE_API_URL: $VITE_API_URL"
+print_status "  - CORETERRA_USER_ID: $CORETERRA_USER_ID"
+print_status "  - Generated frontend/.env for Vite"
+
+echo ""
+
+################################################################################
+# Step 3: Install backend dependencies
 ################################################################################
 print_status "Setting up backend dependencies..."
 cd backend
@@ -117,7 +138,7 @@ cd ..
 echo ""
 
 ################################################################################
-# Step 3: Install frontend dependencies
+# Step 4: Install frontend dependencies
 ################################################################################
 print_status "Setting up frontend dependencies..."
 cd frontend
@@ -135,7 +156,7 @@ cd ..
 echo ""
 
 ################################################################################
-# Step 4: Start backend server (FastAPI)
+# Step 5: Start backend server (FastAPI)
 ################################################################################
 print_status "Starting FastAPI backend server on http://localhost:8000..."
 
@@ -169,7 +190,7 @@ fi
 echo ""
 
 ################################################################################
-# Step 5: Start frontend server (React + Vite)
+# Step 6: Start frontend server (React + Vite)
 ################################################################################
 print_status "Starting React frontend server..."
 
@@ -200,7 +221,7 @@ fi
 echo ""
 
 ################################################################################
-# Step 6: Display final status and keep script running
+# Step 7: Display final status and keep script running
 ################################################################################
 print_success "============================================"
 print_success "  CoreTerra Development Environment Ready!"
