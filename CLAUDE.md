@@ -115,6 +115,7 @@ If any step fails, corresponding rollback operations must be executed. For detai
 
 - `POST /tasks/`: Create a new task.
 - `GET /tasks/{task_id}`: Get task details (returns raw MyST Markdown string, frontend is responsible for rendering).
+- `GET /tasks/{task_id}/history`：Retrieve the historical change log of a task (based on Git Log).
 - `GET /tasks/`: Query task list (supports filtering by status, priority, tag, etc.).
 - `PUT /tasks/{task_id}/status`: Update task status.
 - `PATCH /tasks/{task_id}`: Modify task metadata.
