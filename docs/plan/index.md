@@ -7,7 +7,7 @@ This directory contains the detailed implementation plans for connecting the Cor
 | ID | Plan Name | Description | Status | Dependencies |
 | :--- | :--- | :--- | :--- | :--- |
 | **01** | [Environment & API Setup](./01-setup.md) | Configures `axios`, CORS, and environment variable loading. | 🟢 Completed | None |
-| **02** | [Authentication & User Context](./02-auth.md) | Implements Login page, `UserContext`, and route protection. | ⚪ Ready | 01 |
+| **02** | [Authentication & User Context](./02-auth.md) | Implements Login page, `UserContext`, and route protection. | 🟢 Completed | 01 |
 | **03** | [Task List View](./03-list-view.md) | Connects the Inbox/Kanban views to the `GET /tasks/` API. | ⚪ Ready | 01, 02 (for user context) |
 | **04** | [Task Detail View & MyST](./04-detail-view.md) | Implements full task details, MyST rendering, and optimistic locking updates. | ⚪ Ready | 03 |
 | **05** | [Task Capture & Creation](./05-creation.md) | Connects the Quick Add and Create Modal to `POST /tasks/`. | ⚪ Ready | 03 (to refresh list) |
