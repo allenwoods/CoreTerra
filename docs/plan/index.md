@@ -8,11 +8,11 @@ This directory contains the detailed implementation plans for connecting the Cor
 | :--- | :--- | :--- | :--- | :--- |
 | **01** | [Environment & API Setup](./01-setup.md) | Configures `axios`, CORS, and environment variable loading. | 🟢 Completed | None |
 | **02** | [Authentication & User Context](./02-auth.md) | Implements Login page, `UserContext`, and route protection. | 🟢 Completed | 01 |
-| **03** | [Task List View](./03-list-view.md) | Connects the Inbox/Kanban views to the `GET /tasks/` API. | ⚪ Ready | 01, 02 (for user context) |
+| **03** | [Task List View](./03-list-view.md) | Connects the Inbox/Kanban views to the `GET /tasks/` API. | 🟢 Completed | 01, 02 (for user context) |
 | **04** | [Task Detail View & MyST](./04-detail-view.md) | Implements full task details, MyST rendering, and optimistic locking updates. | ⚪ Ready | 03 |
 | **05** | [Task Capture & Creation](./05-creation.md) | Connects the Quick Add and Create Modal to `POST /tasks/`. | ⚪ Ready | 03 (to refresh list) |
-| **06** | [User & Settings](./06-user-settings.md) | Adds a Settings page to view user profile and system config. | ⚪ Ready | 02 |
-| **07** | [CI/CD & Testing](./07-ci-cd.md) | Sets up `vitest` and GitHub Actions for frontend quality assurance. | ⚪ Ready | 01 |
+| **06** | [User & Settings](./06-user-settings.md) | Adds a Settings page to view user profile and system config. | 🟢 Completed | 02 |
+| **07** | [CI/CD & Testing](./07-ci-cd.md) | Sets up `vitest` and GitHub Actions for frontend quality assurance. | 🟢 Completed | 01 |
 | **08** | [Git History API](./08-git-history-api.md) | Exposes the task version history via `GET /tasks/{task_id}/history`. | ⚪ Ready | 04 |
 
 ## Execution Flow
