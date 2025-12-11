@@ -1,0 +1,175 @@
+{
+  "version": "1.0",
+  "priorities": [
+    {
+      "value": "1",
+      "label": "P1 - 最高优先级",
+      "label_en": "P1 - Critical",
+      "color": "red",
+      "tailwind_class": "bg-red-100 text-red-800",
+      "icon_color": "bg-red-500",
+      "description": "紧急且重要，需要立即处理"
+    },
+    {
+      "value": "2",
+      "label": "P2 - 高优先级",
+      "label_en": "P2 - High",
+      "color": "orange",
+      "tailwind_class": "bg-orange-100 text-orange-800",
+      "icon_color": "bg-orange-500",
+      "description": "重要但不紧急"
+    },
+    {
+      "value": "3",
+      "label": "P3 - 中等优先级",
+      "label_en": "P3 - Medium",
+      "color": "yellow",
+      "tailwind_class": "bg-yellow-100 text-yellow-800",
+      "icon_color": "bg-yellow-500",
+      "description": "正常优先级"
+    },
+    {
+      "value": "4",
+      "label": "P4 - 低优先级",
+      "label_en": "P4 - Low",
+      "color": "blue",
+      "tailwind_class": "bg-blue-100 text-blue-800",
+      "icon_color": "bg-blue-500",
+      "description": "可以延后处理"
+    },
+    {
+      "value": "5",
+      "label": "P5 - 最低优先级",
+      "label_en": "P5 - Lowest",
+      "color": "gray",
+      "tailwind_class": "bg-gray-100 text-gray-800",
+      "icon_color": "bg-gray-500",
+      "description": "低优先级任务"
+    }
+  ],
+  "statuses": [
+    {
+      "value": "inbox",
+      "label": "收件箱",
+      "label_en": "Inbox",
+      "color": "gray",
+      "description": "新捕获的任务，待处理"
+    },
+    {
+      "value": "active",
+      "label": "活跃",
+      "label_en": "Active",
+      "color": "blue",
+      "description": "正在进行中的任务"
+    },
+    {
+      "value": "next",
+      "label": "下一步",
+      "label_en": "Next",
+      "color": "green",
+      "description": "计划执行的任务"
+    },
+    {
+      "value": "waiting",
+      "label": "等待中",
+      "label_en": "Waiting",
+      "color": "yellow",
+      "description": "等待他人或外部条件"
+    },
+    {
+      "value": "done",
+      "label": "完成",
+      "label_en": "Done",
+      "color": "purple",
+      "description": "已完成的任务"
+    },
+    {
+      "value": "completed",
+      "label": "已完成",
+      "label_en": "Completed",
+      "color": "purple",
+      "description": "已完成并归档"
+    },
+    {
+      "value": "archived",
+      "label": "归档",
+      "label_en": "Archived",
+      "color": "gray",
+      "description": "已归档的历史任务"
+    }
+  ],
+  "roles": [
+    {
+      "value": "backend-engineer",
+      "label": "后端工程师",
+      "label_en": "Backend Engineer",
+      "color": "blue",
+      "icon": "server"
+    },
+    {
+      "value": "frontend-engineer",
+      "label": "前端工程师",
+      "label_en": "Frontend Engineer",
+      "color": "green",
+      "icon": "monitor"
+    },
+    {
+      "value": "ui-designer",
+      "label": "UI设计师",
+      "label_en": "UI Designer",
+      "color": "purple",
+      "icon": "palette"
+    },
+    {
+      "value": "devops-engineer",
+      "label": "DevOps工程师",
+      "label_en": "DevOps Engineer",
+      "color": "orange",
+      "icon": "settings"
+    },
+    {
+      "value": "product-manager",
+      "label": "产品经理",
+      "label_en": "Product Manager",
+      "color": "red",
+      "icon": "briefcase"
+    }
+  ],
+  "task_types": [
+    {
+      "value": "Capture",
+      "label": "捕获",
+      "label_en": "Capture",
+      "description": "初步捕获的想法或任务"
+    },
+    {
+      "value": "NextAction",
+      "label": "下一步行动",
+      "label_en": "Next Action",
+      "description": "具体的可执行行动"
+    },
+    {
+      "value": "Project",
+      "label": "项目",
+      "label_en": "Project",
+      "description": "需要多个步骤的项目"
+    },
+    {
+      "value": "Reference",
+      "label": "参考资料",
+      "label_en": "Reference",
+      "description": "参考资料或文档"
+    },
+    {
+      "value": "WaitingFor",
+      "label": "等待",
+      "label_en": "Waiting For",
+      "description": "等待他人的任务"
+    }
+  ],
+  "defaults": {
+    "priority": "3",
+    "status": "inbox",
+    "task_type": "Capture"
+  }
+}

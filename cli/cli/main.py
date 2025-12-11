@@ -2,24 +2,8 @@ import typer
 import httpx
 from typing import Optional, List
 from cli.core import config
-from enum import Enum
 import sys
 import os
-
-# Add repo root to sys.path to allow importing backend
-# This is a hack for the MVP to share schemas
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
-
-try:
-    from backend.src.schemas import Priority
-except ImportError:
-    # Fallback if backend is not available (e.g. installed as standalone CLI)
-    class Priority(str, Enum):
-        P1 = "1"
-        P2 = "2"
-        P3 = "3"
-        P4 = "4"
-        P5 = "5"
 
 app = typer.Typer()
 
@@ -56,7 +40,7 @@ def login(username: str):
 @app.command()
 def capture(
     title: str,
-    priority: Priority = typer.Option(Priority.P3, "--priority", "-p", help="Task priority (1-5)"),
+    priority: str = typer.Option(config.get_default_priority(), "--priority", "-p", help="Task priority (1-5)"),
     body: str = typer.Option("", "--body", "-b", help="Task description"),
 ):
     """
@@ -65,9 +49,15 @@ def capture(
     user_id = config.ensure_logged_in()
     api_url = config.get_api_url()
 
+    # Validate priority
+    valid_priorities = config.get_priority_choices()
+    if priority not in valid_priorities:
+        typer.echo(f"Invalid priority '{priority}'. Choose from: {', '.join(valid_priorities)}")
+        raise typer.Exit(1)
+
     payload = {
         "title": title,
-        "priority": priority.value,
+        "priority": priority,
         "body": body,
         "user_id": user_id,
         "type": "Capture"
@@ -169,7 +159,7 @@ def show(task_id: str):
 def clarify(
     task_id: str,
     title: Optional[str] = typer.Option(None, "--title", help="New title"),
-    priority: Optional[Priority] = typer.Option(None, "--priority", "-p", help="New priority"),
+    priority: Optional[str] = typer.Option(None, "--priority", "-p", help="New priority"),
     role: Optional[str] = typer.Option(None, "--role", "-r", help="Role owner"),
     tags: Optional[str] = typer.Option(None, "--tags", "-t", help="Comma-separated tags"),
     due: Optional[str] = typer.Option(None, "--due", "-d", help="Due date (YYYY-MM-DD)"),
@@ -179,6 +169,13 @@ def clarify(
     """
     config.ensure_logged_in()
     api_url = config.get_api_url()
+
+    # Validate priority if provided
+    if priority:
+        valid_priorities = config.get_priority_choices()
+        if priority not in valid_priorities:
+            typer.echo(f"Invalid priority '{priority}'. Choose from: {', '.join(valid_priorities)}")
+            raise typer.Exit(1)
 
     # 1. Fetch current task to get updated_at (optimistic lock)
     try:
@@ -193,7 +190,7 @@ def clarify(
         # 2. Construct Patch
         payload = {"updated_at": updated_at}
         if title: payload["title"] = title
-        if priority: payload["priority"] = priority.value
+        if priority: payload["priority"] = priority
         if role: payload["role_owner"] = role
         if tags: payload["tags"] = [t.strip() for t in tags.split(",")]
         if due: payload["due_date"] = due

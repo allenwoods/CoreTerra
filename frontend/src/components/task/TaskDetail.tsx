@@ -20,6 +20,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import SubtaskList from './SubtaskList';
 import type { Task, TaskStatus, TaskPriority } from '@/types/task';
 import { PRIORITY_COLORS } from '@/types/task';
+import { PRIORITIES } from '@/config/enums';
 
 interface TaskDetailProps {
   task: Task;
@@ -36,8 +37,8 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   const [title, setTitle] = useState(task.title);
   const [body, setBody] = useState(task.body);
   const [priority, setPriority] = useState<TaskPriority>(task.priority);
-  const [roleOwner, setRoleOwner] = useState(task.role_owner);
-  const [dueDate, setDueDate] = useState(task.due_date);
+  const [roleOwner, setRoleOwner] = useState(task.role_owner || '');
+  const [dueDate, setDueDate] = useState(task.due_date || '');
   const [creator, setCreator] = useState(task.creator || '');
   const [reviewer, setReviewer] = useState(task.reviewer || '');
   const [collaborator, setCollaborator] = useState(task.collaborator || '');
@@ -55,8 +56,8 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
     setTitle(task.title);
     setBody(task.body);
     setPriority(task.priority);
-    setRoleOwner(task.role_owner);
-    setDueDate(task.due_date);
+    setRoleOwner(task.role_owner || '');
+    setDueDate(task.due_date || '');
     setCreator(task.creator || '');
     setReviewer(task.reviewer || '');
     setCollaborator(task.collaborator || '');
@@ -71,9 +72,8 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
       title,
       body,
       priority,
-      priorityColor: PRIORITY_COLORS[priority],
-      role_owner: roleOwner,
-      due_date: dueDate,
+      role_owner: roleOwner || null,
+      due_date: dueDate || null,
       creator: creator || null,
       reviewer: reviewer || null,
       collaborator: collaborator || null,
@@ -239,24 +239,14 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="p1">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    P1 - 紧急
-                  </span>
-                </SelectItem>
-                <SelectItem value="p2">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                    P2 - 重要
-                  </span>
-                </SelectItem>
-                <SelectItem value="p3">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
-                    P3 - 一般
-                  </span>
-                </SelectItem>
+                {PRIORITIES.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    <span className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${p.icon_color}`} />
+                      {p.label}
+                    </span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -349,21 +339,21 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
           <div className="text-xs text-gray-600 space-y-1 bg-gray-50 p-3 rounded-lg">
             <div className="flex justify-between">
               <span>捕获时间:</span>
-              <span className="font-mono">{new Date(task.timestamp_capture).toLocaleString()}</span>
+              <span className="font-mono">{new Date(task.capture_timestamp).toLocaleString()}</span>
             </div>
-            {task.timestamp_commitment && (
+            {task.commitment_timestamp && (
               <div className="flex justify-between">
                 <span>承诺时间:</span>
                 <span className="font-mono">
-                  {new Date(task.timestamp_commitment).toLocaleString()}
+                  {new Date(task.commitment_timestamp).toLocaleString()}
                 </span>
               </div>
             )}
-            {task.timestamp_completion && (
+            {task.completion_timestamp && (
               <div className="flex justify-between">
                 <span>完成时间:</span>
                 <span className="font-mono">
-                  {new Date(task.timestamp_completion).toLocaleString()}
+                  {new Date(task.completion_timestamp).toLocaleString()}
                 </span>
               </div>
             )}

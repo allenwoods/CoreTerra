@@ -14,13 +14,13 @@ def test_organize_enforces_accountability(client, temp_workspace):
     t = client.post("/tasks/", json={
         "title": "Unowned Task",
         "user_id": TEST_USER_ID,
-        "type": TaskType.CAPTURE
+        "type": "Capture"
     }).json()
 
     # Try to activate it WITHOUT a role owner
     # Note: This assumes the API enforces this rule.
     status_payload = {
-        "status": Status.ACTIVE,
+        "status": "active",
         "user_id": TEST_USER_ID,
         "updated_at": t["updated_at"]
     }
@@ -32,8 +32,8 @@ def test_organize_enforces_accountability(client, temp_workspace):
     # Now assign Role Owner (The Organize Step)
     # This uses the PATCH endpoint (Clarify module) which is fine as organization is also metadata update
     organize_payload = {
-        "role_owner": Role.BACKEND_LEAD,
-        "type": TaskType.PROJECT,
+        "role_owner": "backend-engineer",
+        "type": "Project",
         "updated_at": t["updated_at"] # Use original timestamp as previous call failed (no update happened)
     }
     resp = client.patch(f"/tasks/{t['id']}", json=organize_payload)
@@ -56,13 +56,13 @@ def test_organize_defines_nature_of_work(client, temp_workspace):
     t = client.post("/tasks/", json={
         "title": "Ref",
         "user_id": TEST_USER_ID,
-        "type": TaskType.CAPTURE
+        "type": "Capture"
     }).json()
 
     # Organize as Reference
     resp = client.patch(f"/tasks/{t['id']}", json={
-        "type": TaskType.REFERENCE,
-        "role_owner": Role.ARCHIVIST,
+        "type": "Reference",
+        "role_owner": "product-manager",
         "updated_at": t["updated_at"]
     })
     updated = resp.json()

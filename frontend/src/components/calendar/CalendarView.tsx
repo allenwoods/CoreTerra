@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Task, TasksByStatus } from '@/types/task';
+import { getPriorityColor } from '@/types/task';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, getDay, isSameDay, addMonths, subMonths } from 'date-fns';
 import { getIcon } from '@/lib/iconMap';
 
@@ -127,7 +128,7 @@ export default function CalendarView({ tasks, onTaskClick }: CalendarViewProps) 
                   <div
                     key={task.id}
                     onClick={() => onTaskClick(task)}
-                    className={`text-[10px] p-1 rounded border border-gray-100 cursor-pointer truncate ${task.priorityColor} opacity-80 hover:opacity-100 transition-opacity`}
+                    className={`text-[10px] p-1 rounded border border-gray-100 cursor-pointer truncate ${getPriorityColor(task.priority)} opacity-80 hover:opacity-100 transition-opacity`}
                     title={task.title}
                   >
                     {task.title}

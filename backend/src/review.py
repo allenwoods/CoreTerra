@@ -19,14 +19,20 @@ def read_task(task_id: UUID):
 @router.get("/tasks/", response_model=List[TaskMetadataResponse])
 def read_tasks(
     status: Optional[str] = None,
+    priority: Optional[str] = None,
+    tag: Optional[str] = None,
     sort_by: Optional[str] = None,
-    order: Optional[str] = "asc"
+    order: Optional[str] = "asc",
+    limit: Optional[int] = None,
+    offset: Optional[int] = 0
 ):
     """
-    Lists tasks, optionally filtered by status.
+    Lists tasks, optionally filtered by status, priority, tag, with pagination support.
     """
     filters = {}
     if status:
         filters['status'] = status
+    if priority:
+        filters['priority'] = priority
 
-    return list_tasks(filters, sort_by=sort_by, order=order)
+    return list_tasks(filters, tag=tag, sort_by=sort_by, order=order, limit=limit, offset=offset)

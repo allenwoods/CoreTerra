@@ -1,5 +1,14 @@
-export type TaskStatus = 'inbox' | 'next' | 'waiting' | 'done';
-export type TaskPriority = 'p1' | 'p2' | 'p3';
+// Import types and helpers from centralized config
+import {
+  type TaskPriority,
+  type TaskStatus,
+  PRIORITY_COLORS,
+  getPriorityConfig
+} from '@/config/enums';
+
+// Re-export for backward compatibility
+export type { TaskPriority, TaskStatus };
+export { PRIORITY_COLORS };
 
 export interface Assignee {
   initial: string;
@@ -8,36 +17,45 @@ export interface Assignee {
 }
 
 export interface Task {
-  id: string;
+  id: string;  // Maps to backend task_id
   status: TaskStatus;
   title: string;
   priority: TaskPriority;
-  priorityColor: string; // Computed from priority: e.g., 'bg-red-100 text-red-800'
-  role_owner: string;
-  creator: string | null;
-  reviewer: string | null;
-  collaborator: string | null;
-  due_date: string; // ISO 8601 date string: YYYY-MM-DD
-  timestamp_capture: string; // ISO 8601 datetime string
-  timestamp_commitment?: string; // ISO 8601 datetime string
-  timestamp_completion?: string; // ISO 8601 datetime string
+  user_id: string;  // Creator user ID
+  role_owner: string | null;
+  due_date: string | null;  // ISO 8601 datetime string
+  capture_timestamp: string;  // ISO 8601 datetime string
+  commitment_timestamp?: string;  // ISO 8601 datetime string
+  completion_timestamp?: string;  // ISO 8601 datetime string
+  updated_at: string;  // For optimistic locking
   project?: string;
-  body: string; // Markdown content (without subtask checklist - subtasks are separate tasks)
+  body: string;  // Markdown content
+  parent_id?: string;  // If set, this task is a subtask
+  tags?: string[];  // Task tags
+  type?: string;  // Task type (Capture, NextAction, Project, etc.)
+
+  // Legacy/UI helper fields (optional, can be computed)
+  creator?: string | null;
+  reviewer?: string | null;
+  collaborator?: string | null;
   assignee?: Assignee;
-  parent_id?: string; // If set, this task is a subtask of the parent task
 }
 
 // Helper type for tasks grouped by status
 export type TasksByStatus = Record<TaskStatus, Task[]>;
 
-// Priority color mapping
-export const PRIORITY_COLORS: Record<TaskPriority, string> = {
-  p1: 'bg-red-100 text-red-800',
-  p2: 'bg-yellow-100 text-yellow-800',
-  p3: 'bg-purple-100 text-purple-800',
-};
-
-// Helper function to get priority color
+// Helper function to get priority color (uses config)
 export function getPriorityColor(priority: TaskPriority): string {
-  return PRIORITY_COLORS[priority];
+  return getPriorityConfig(priority)?.tailwind_class || PRIORITY_COLORS[priority];
+}
+
+// API Query Filters
+export interface TaskFilters {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  tag?: string;
+  sort_by?: string;
+  order?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
 }

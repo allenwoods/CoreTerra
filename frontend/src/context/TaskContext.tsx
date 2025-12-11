@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Task, TasksByStatus, TaskStatus } from '@/types/task';
-import { initialTasks, initialLogs } from '@/lib/mockData';
-import { getPriorityColor } from '@/types/task';
+import { initialLogs } from '@/lib/mockData';
+import { getTasks, createTask as apiCreateTask } from '@/lib/api';
+import { DEFAULT_PRIORITY, DEFAULT_TASK_TYPE } from '@/config/enums';
 
 interface TaskContextType {
   // State
@@ -10,6 +10,8 @@ interface TaskContextType {
   selectedTask: Task | null;
   filterText: string;
   activityLog: string[];
+  isLoading: boolean;
+  error: string | null;
 
   // Task operations
   setSelectedTask: (task: Task | null) => void;
@@ -17,6 +19,7 @@ interface TaskContextType {
   createTask: (title: string, body?: string, parentId?: string) => void;
   deleteTask: (taskId: string) => void;
   setFilterText: (text: string) => void;
+  refetch: () => Promise<void>;
 
   // Subtask queries
   getSubtasks: (parentId: string) => Task[];
@@ -30,10 +33,20 @@ interface TaskProviderProps {
 }
 
 export function TaskProvider({ children }: TaskProviderProps) {
-  const [tasks, setTasks] = useState<TasksByStatus>(initialTasks);
+  const [tasks, setTasks] = useState<TasksByStatus>({
+    inbox: [],
+    active: [],
+    next: [],
+    waiting: [],
+    done: [],
+    completed: [],
+    archived: [],
+  });
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filterText, setFilterText] = useState('');
   const [activityLog, setActivityLog] = useState<string[]>(initialLogs);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Update an existing task
   const updateTask = useCallback((updatedTask: Task, logMessage: string) => {
@@ -67,35 +80,73 @@ export function TaskProvider({ children }: TaskProviderProps) {
     setSelectedTask(updatedTask);
   }, []);
 
+  // Fetch tasks from API
+  const fetchTasks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const tasksData = await getTasks();
+      // Group by status
+      const grouped: TasksByStatus = {
+        inbox: [],
+        active: [],
+        next: [],
+        waiting: [],
+        done: [],
+        completed: [],
+        archived: [],
+      };
+
+      tasksData.forEach((task) => {
+        if (grouped[task.status]) {
+          grouped[task.status].push(task);
+        }
+      });
+
+      setTasks(grouped);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch tasks');
+      console.error('Error fetching tasks:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Load tasks on mount
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
   // Create a new task (optionally as a subtask if parentId is provided)
-  const createTask = useCallback((title: string, body: string = '', parentId?: string) => {
-    const id = 'CT-' + Math.floor(100 + Math.random() * 900);
+  const createTask = useCallback(async (title: string, body: string = '', parentId?: string) => {
+    try {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        throw new Error('User not logged in');
+      }
 
-    const newTask: Task = {
-      id,
-      status: 'inbox',
-      title,
-      priority: 'p3',
-      priorityColor: getPriorityColor('p3'),
-      role_owner: '',
-      creator: null,
-      reviewer: null,
-      collaborator: null,
-      due_date: '',
-      timestamp_capture: new Date().toISOString(),
-      body,
-      assignee: { initial: '?', color: 'bg-gray-400', name: 'Unassigned' },
-      parent_id: parentId,
-    };
+      const newTask = await apiCreateTask({
+        title,
+        user_id: userId,
+        priority: DEFAULT_PRIORITY,
+        body,
+        type: DEFAULT_TASK_TYPE,
+      });
 
-    setTasks((prev) => ({
-      ...prev,
-      inbox: [newTask, ...prev.inbox],
-    }));
+      // If parentId, we'd need to update the parent_id field via PATCH
+      // For now, just add to inbox
+      setTasks((prev) => ({
+        ...prev,
+        inbox: [newTask, ...prev.inbox],
+      }));
 
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-    const parentInfo = parentId ? ` (subtask of #${parentId})` : '';
-    setActivityLog((prev) => [`[${timestamp}] Created Task #${id}: '${title}'${parentInfo}`, ...prev]);
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+      const parentInfo = parentId ? ` (subtask of #${parentId})` : '';
+      setActivityLog((prev) => [`[${timestamp}] Created Task #${newTask.id}: '${title}'${parentInfo}`, ...prev]);
+    } catch (err: any) {
+      console.error('Error creating task:', err);
+      setError(err.message || 'Failed to create task');
+    }
   }, []);
 
   // Delete a task
@@ -157,11 +208,14 @@ export function TaskProvider({ children }: TaskProviderProps) {
     selectedTask,
     filterText,
     activityLog,
+    isLoading,
+    error,
     setSelectedTask,
     updateTask,
     createTask,
     deleteTask,
     setFilterText,
+    refetch: fetchTasks,
     getSubtasks,
     getTaskById,
   };

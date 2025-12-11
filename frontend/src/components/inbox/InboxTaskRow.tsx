@@ -51,7 +51,7 @@ function InboxTaskRow({ task, isSelected, onSelect, onClick }: InboxTaskRowProps
 
       {/* Priority */}
       <Badge className={`${PRIORITY_COLORS[task.priority]} text-xs flex-shrink-0`}>
-        {task.priority.toUpperCase()}
+        P{task.priority}
       </Badge>
 
       {/* Role Owner */}
@@ -76,7 +76,7 @@ function InboxTaskRow({ task, isSelected, onSelect, onClick }: InboxTaskRowProps
 
       {/* Capture time */}
       <span className="text-xs text-gray-400 w-16 flex-shrink-0 text-right">
-        {new Date(task.timestamp_capture).toLocaleDateString('zh-CN', {
+        {new Date(task.capture_timestamp).toLocaleDateString('zh-CN', {
           month: 'short',
           day: 'numeric',
         })}
