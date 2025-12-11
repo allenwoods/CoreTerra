@@ -9,6 +9,7 @@ import KanbanPage from '@/pages/KanbanPage';
 import InboxPage from '@/pages/InboxPage';
 import LoginPage from '@/pages/LoginPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 function AppRoutes() {
   const { createTask } = useTaskContext();
@@ -32,23 +33,25 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        {/* Standalone pages (no DashboardLayout) */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Dashboard pages */}
-        <Route
-          element={
-            <DashboardLayout
-              onUserClick={handleUserClick}
-              onQuickAdd={handleQuickAdd}
-              onCreateFull={handleCreateFull}
-            />
-          }
-        >
-          <Route path="/" element={<KanbanPage />} />
-          <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route
+            element={
+              <DashboardLayout
+                onUserClick={handleUserClick}
+                onQuickAdd={handleQuickAdd}
+                onCreateFull={handleCreateFull}
+              />
+            }
+          >
+            <Route path="/" element={<KanbanPage />} />
+            <Route path="/inbox" element={<InboxPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
         </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

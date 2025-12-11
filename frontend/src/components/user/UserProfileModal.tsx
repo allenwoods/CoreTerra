@@ -22,6 +22,10 @@ function UserProfileModal({ open, onOpenChange }: UserProfileModalProps) {
   const { currentUser, getRoleById } = useUserContext();
   const { tasks } = useTaskContext();
 
+  if (!currentUser) {
+    return null;
+  }
+
   const role = getRoleById(currentUser.role);
 
   // Calculate user stats
