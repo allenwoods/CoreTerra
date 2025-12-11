@@ -54,6 +54,8 @@ export interface LoginResponse {
   role: string;
   avatar: string;
   color: string;
+  level: number;
+  experience: number;
 }
 
 export const login = async (username: string): Promise<LoginResponse> => {
@@ -71,7 +73,9 @@ export const getUsers = async (): Promise<User[]> => {
     email: u.email,
     role: u.role,
     avatar: u.avatar,
-    color: u.color
+    color: u.color,
+    level: u.level ?? 1,
+    experience: u.experience ?? 0
   }));
 };
 
