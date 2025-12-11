@@ -40,6 +40,8 @@ class User(BaseModel):
     role: Role
     avatar: str
     color: str
+    level: int = 1
+    experience: int = 0
     body: Optional[str] = None # Added body to support MyST markdown mapping
 
 class TaskMetadataBase(BaseModel):

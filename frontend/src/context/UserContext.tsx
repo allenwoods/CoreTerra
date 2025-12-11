@@ -71,7 +71,9 @@ export function UserProvider({ children }: UserProviderProps) {
         email: data.email,
         role: data.role,
         avatar: data.avatar,
-        color: data.color
+        color: data.color,
+        level: data.level ?? 1,
+        experience: data.experience ?? 0
       };
 
       localStorage.setItem('user_id', user.id);

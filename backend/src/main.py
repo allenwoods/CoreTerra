@@ -41,4 +41,4 @@ app.include_router(auth_router)
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "message": "System functional"}
+    return {"status": "ok", "message": "System functional", "version": "0.1.0"}

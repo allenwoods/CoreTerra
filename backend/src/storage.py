@@ -57,8 +57,8 @@ def save_user_to_file_and_db(user_data: Dict[str, Any]):
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT OR REPLACE INTO users (user_id, username, email, role, avatar, color, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO users (user_id, username, email, role, avatar, color, level, experience, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         user_id,
         user_data["username"],
@@ -66,6 +66,8 @@ def save_user_to_file_and_db(user_data: Dict[str, Any]):
         user_data["role"],
         user_data["avatar"],
         user_data["color"],
+        user_data.get("level", 1),
+        user_data.get("experience", 0),
         user_data.get("created_at", datetime.now(timezone.utc).isoformat())
     ))
 
@@ -138,6 +140,8 @@ def init_db():
             role TEXT NOT NULL,
             avatar TEXT,
             color TEXT,
+            level INTEGER DEFAULT 1,
+            experience INTEGER DEFAULT 0,
             created_at TEXT NOT NULL
         )
     """)

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { getIcon } from '@/lib/iconMap';
 import { Button } from '@/components/ui/button';
+import { useUserContext } from '@/context/UserContext';
 
 interface NavLinkProps {
   icon: string;
@@ -77,6 +78,7 @@ interface SidebarProps {
 
 export default function Sidebar({ onUserClick }: SidebarProps) {
   const location = useLocation();
+  const { currentUser } = useUserContext();
   const [mobileOpen, setMobileOpen] = useState(false);
   const FolderIcon = getIcon('folder_managed');
   const HelpIcon = getIcon('help');
@@ -104,8 +106,7 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
         <div
           className="bg-center bg-no-repeat bg-cover w-10 h-10 rounded-full bg-gray-200 border border-gray-100 shadow-sm cursor-pointer hover:ring-2 ring-primary transition-all"
           style={{
-            backgroundImage:
-              'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDSOR72eK1H5cCfSa1I3VSaTQGtjYThNG9XIAbrPmHmFGdwj00ApRaoTp5Thj60nEoKEszuJwFg5I_T1xNWHmuBA5dTPbJxhBlQeksRAA8fXppcaZQEAnayvUoputQ0j8H5kRMKpnLtwG51hcZPEMZq-ijB2VVeRl3yxDmQU4x5oMoL-rpqbRiGe1AKLw7NH3sSbrD-RLgacDfcn4Hh-LaOER-CuWCCK0Klz7i97I48cXYBCuj3HDs_xqM-R-8IdlhlKq0gt9QIMEYB")',
+            backgroundImage: `url("${currentUser?.avatar}")`,
           }}
           onClick={() => {
             onUserClick?.();
@@ -113,8 +114,12 @@ export default function Sidebar({ onUserClick }: SidebarProps) {
           }}
         ></div>
         <div className="flex flex-col">
-          <h1 className="text-gray-900 font-semibold text-sm">CoreTerra</h1>
-          <p className="text-gray-500 text-xs">Level 5 (250/500 XP)</p>
+          <h1 className="text-gray-900 font-semibold text-sm">
+            {currentUser?.name || 'Guest'}
+          </h1>
+          <p className="text-gray-500 text-xs">
+            Level {currentUser?.level || 1} ({currentUser?.experience || 0}/500 XP)
+          </p>
         </div>
       </div>
 

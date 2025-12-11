@@ -8,7 +8,7 @@ def get_user_by_username(username: str) -> Optional[dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT user_id, username, email, role, avatar, color FROM users WHERE LOWER(username) = LOWER(?)",
+        "SELECT user_id, username, email, role, avatar, color, level, experience FROM users WHERE LOWER(username) = LOWER(?)",
         (username,)
     )
     row = cursor.fetchone()
@@ -21,7 +21,9 @@ def get_user_by_username(username: str) -> Optional[dict]:
             "email": row["email"],
             "role": row["role"],
             "avatar": row["avatar"],
-            "color": row["color"]
+            "color": row["color"],
+            "level": row["level"],
+            "experience": row["experience"]
         }
     return None
 
@@ -30,7 +32,7 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT user_id, username, email, role, avatar, color FROM users WHERE user_id = ?",
+        "SELECT user_id, username, email, role, avatar, color, level, experience FROM users WHERE user_id = ?",
         (user_id,)
     )
     row = cursor.fetchone()
@@ -43,7 +45,9 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
             "email": row["email"],
             "role": row["role"],
             "avatar": row["avatar"],
-            "color": row["color"]
+            "color": row["color"],
+            "level": row["level"],
+            "experience": row["experience"]
         }
     return None
 
@@ -51,7 +55,7 @@ def get_all_users() -> List[Dict]:
     """Returns a list of all users."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT user_id, username, email, role, avatar, color FROM users")
+    cursor.execute("SELECT user_id, username, email, role, avatar, color, level, experience FROM users")
     rows = cursor.fetchall()
     conn.close()
 
@@ -63,7 +67,9 @@ def get_all_users() -> List[Dict]:
             "email": row["email"],
             "role": row["role"],
             "avatar": row["avatar"],
-            "color": row["color"]
+            "color": row["color"],
+            "level": row["level"],
+            "experience": row["experience"]
         })
     return users
 
