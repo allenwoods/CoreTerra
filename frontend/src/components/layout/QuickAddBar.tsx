@@ -50,7 +50,7 @@ export default function QuickAddBar({ onCommand, onExpand }: QuickAddBarProps) {
         <input
           ref={inputRef}
           className="w-full bg-gray-50 border border-gray-200 rounded-lg h-10 pl-10 pr-12 sm:pr-24 text-gray-900 placeholder:text-gray-400 focus:outline-0 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
-          placeholder="快速添加任务..."
+          placeholder="Quick add task..."
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -60,7 +60,7 @@ export default function QuickAddBar({ onCommand, onExpand }: QuickAddBarProps) {
           <button
             onClick={() => onExpand?.(command || undefined)}
             className="text-gray-400 hover:text-primary p-1 rounded-md hover:bg-gray-100 transition-colors"
-            title="展开完整表单 (⌘⇧N)"
+            title="Open full form (⌘⇧N)"
           >
             <MaximizeIcon className="h-4 w-4" />
           </button>
