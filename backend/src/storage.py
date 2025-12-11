@@ -250,23 +250,34 @@ def get_task(task_id: UUID) -> Optional[TaskFullResponse]:
         print(f"Error parsing task {task_id}: {e}")
         return None
 
-def list_tasks(filters: Dict[str, Any] = None, sort_by: str = None, order: str = "asc") -> List[TaskMetadataResponse]:
-    """Lists tasks from SQLite index."""
+def list_tasks(filters: Dict[str, Any] = None, tag: str = None, sort_by: str = None, order: str = "asc", limit: int = None, offset: int = 0) -> List[TaskMetadataResponse]:
+    """Lists tasks from SQLite index with support for filtering, sorting, and pagination."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
     query = "SELECT * FROM tasks"
     params = []
 
+    conditions = []
+
+    # Handle standard filters (status, priority)
     if filters:
-        conditions = []
         for key, value in filters.items():
             if value is not None:
                 conditions.append(f"{key} = ?")
                 params.append(value)
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
 
+    # Handle tag filtering (tags stored as JSON array in SQLite)
+    if tag:
+        # SQLite JSON function to check if tag exists in tags array
+        # Note: This assumes tags column stores JSON array like '["tag1", "tag2"]'
+        conditions.append("(tags IS NOT NULL AND tags LIKE ?)")
+        params.append(f'%"{tag}"%')
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    # Sorting
     if sort_by:
         # Mapping to safe column names to prevent injection
         allowed_cols = {
@@ -282,6 +293,12 @@ def list_tasks(filters: Dict[str, Any] = None, sort_by: str = None, order: str =
              if order.lower() not in ["asc", "desc"]:
                  order = "asc"
              query += f" ORDER BY {safe_col} {order}"
+
+    # Pagination
+    if limit is not None:
+        query += f" LIMIT {limit}"
+        if offset > 0:
+            query += f" OFFSET {offset}"
 
     cursor.execute(query, params)
     rows = cursor.fetchall()

@@ -6,7 +6,7 @@ import TaskDetail from '@/components/task/TaskDetail';
 import type { Task } from '@/types/task';
 
 export default function InboxPage() {
-  const { tasks, selectedTask, setSelectedTask } = useTaskContext();
+  const { tasks, selectedTask, setSelectedTask, isLoading, error } = useTaskContext();
   const { moveToBoard, deleteTask } = useTaskOperations();
 
   const inboxTasks = tasks.inbox;
@@ -66,6 +66,8 @@ export default function InboxPage() {
         onTaskClick={handleTaskClick}
         onMoveToBoard={handleMoveToBoard}
         onDelete={handleDelete}
+        isLoading={isLoading}
+        error={error}
       />
 
       {/* Task Detail Panel */}

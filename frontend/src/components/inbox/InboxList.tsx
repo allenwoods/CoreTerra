@@ -12,7 +12,7 @@ import {
 import InboxTaskRow from './InboxTaskRow';
 import type { Task, TaskPriority } from '@/types/task';
 
-type SortField = 'timestamp_capture' | 'priority' | 'due_date' | 'title';
+type SortField = 'capture_timestamp' | 'priority' | 'due_date' | 'title';
 type SortOrder = 'asc' | 'desc';
 
 interface InboxListProps {
@@ -20,13 +20,15 @@ interface InboxListProps {
   onTaskClick: (task: Task) => void;
   onMoveToBoard: (taskIds: string[]) => void;
   onDelete: (taskIds: string[]) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-const priorityOrder: Record<TaskPriority, number> = { p1: 1, p2: 2, p3: 3 };
+const priorityOrder: Record<TaskPriority, number> = { '1': 1, '2': 2, '3': 3, '4': 4, '5': 5 };
 
-function InboxList({ tasks, onTaskClick, onMoveToBoard, onDelete }: InboxListProps) {
+function InboxList({ tasks, onTaskClick, onMoveToBoard, onDelete, isLoading, error }: InboxListProps) {
   const [searchText, setSearchText] = useState('');
-  const [sortField, setSortField] = useState<SortField>('timestamp_capture');
+  const [sortField, setSortField] = useState<SortField>('capture_timestamp');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -48,8 +50,8 @@ function InboxList({ tasks, onTaskClick, onMoveToBoard, onDelete }: InboxListPro
       let comparison = 0;
 
       switch (sortField) {
-        case 'timestamp_capture':
-          comparison = new Date(a.timestamp_capture).getTime() - new Date(b.timestamp_capture).getTime();
+        case 'capture_timestamp':
+          comparison = new Date(a.capture_timestamp).getTime() - new Date(b.capture_timestamp).getTime();
           break;
         case 'priority':
           comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -146,7 +148,7 @@ function InboxList({ tasks, onTaskClick, onMoveToBoard, onDelete }: InboxListPro
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="timestamp_capture">捕获时间</SelectItem>
+              <SelectItem value="capture_timestamp">捕获时间</SelectItem>
               <SelectItem value="priority">优先级</SelectItem>
               <SelectItem value="due_date">截止日期</SelectItem>
               <SelectItem value="title">标题</SelectItem>
@@ -204,7 +206,17 @@ function InboxList({ tasks, onTaskClick, onMoveToBoard, onDelete }: InboxListPro
 
       {/* Task list */}
       <div className="flex-1 overflow-y-auto">
-        {sortedTasks.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+            <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mb-4" />
+            <p>加载中...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-64 text-red-500">
+            <p className="text-lg font-medium">加载失败</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        ) : sortedTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             {searchText ? (
               <>

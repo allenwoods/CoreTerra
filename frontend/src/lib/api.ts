@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { User } from '@/types/user';
 import type { Role } from '@/types/role';
+import type { Task, TaskFilters } from '@/types/task';
 
 /**
  * Axios instance configured for CoreTerra API.
@@ -77,5 +78,92 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getRoles = async (): Promise<Role[]> => {
   const response = await api.get<Role[]>('/roles');
+  return response.data;
+};
+
+// Task API
+
+/**
+ * Fetch tasks with optional filters, sorting, and pagination.
+ */
+export const getTasks = async (filters?: TaskFilters): Promise<Task[]> => {
+  const params = new URLSearchParams();
+
+  if (filters?.status) params.append('status', filters.status);
+  if (filters?.priority) params.append('priority', filters.priority);
+  if (filters?.tag) params.append('tag', filters.tag);
+  if (filters?.sort_by) params.append('sort_by', filters.sort_by);
+  if (filters?.order) params.append('order', filters.order);
+  if (filters?.limit !== undefined) params.append('limit', filters.limit.toString());
+  if (filters?.offset !== undefined) params.append('offset', filters.offset.toString());
+
+  const queryString = params.toString();
+  const url = queryString ? `/tasks/?${queryString}` : '/tasks/';
+
+  const response = await api.get<Task[]>(url);
+  return response.data;
+};
+
+/**
+ * Fetch a single task by ID (includes full body).
+ */
+export const getTask = async (taskId: string): Promise<Task> => {
+  const response = await api.get<Task>(`/tasks/${taskId}`);
+  return response.data;
+};
+
+/**
+ * Create a new task.
+ */
+export interface CreateTaskRequest {
+  title: string;
+  user_id: string;
+  priority?: string;
+  tags?: string[];
+  body?: string;
+  role_owner?: string | null;
+  type?: string;
+}
+
+export const createTask = async (data: CreateTaskRequest): Promise<Task> => {
+  const response = await api.post<Task>('/tasks/', data);
+  return response.data;
+};
+
+/**
+ * Update task status.
+ */
+export interface UpdateTaskStatusRequest {
+  status: string;
+  user_id: string;
+  updated_at: string;
+}
+
+export const updateTaskStatus = async (
+  taskId: string,
+  data: UpdateTaskStatusRequest
+): Promise<Task> => {
+  const response = await api.put<Task>(`/tasks/${taskId}/status`, data);
+  return response.data;
+};
+
+/**
+ * Update task metadata (PATCH).
+ */
+export interface UpdateTaskMetadataRequest {
+  priority?: string;
+  due_date?: string | null;
+  tags?: string[];
+  role_owner?: string | null;
+  type?: string;
+  title?: string;
+  updated_at: string;
+}
+
+export const updateTaskMetadata = async (
+  taskId: string,
+  data: UpdateTaskMetadataRequest
+): Promise<Task> => {
+  const response = await api.patch<Task>(`/tasks/${taskId}`, data);
   return response.data;
 };
