@@ -1,8 +1,14 @@
-// Align with backend Status enum (7 statuses)
-export type TaskStatus = 'inbox' | 'active' | 'next' | 'waiting' | 'done' | 'completed' | 'archived';
+// Import types and helpers from centralized config
+import {
+  type TaskPriority,
+  type TaskStatus,
+  PRIORITY_COLORS,
+  getPriorityConfig
+} from '@/config/enums';
 
-// Align with backend Priority enum (5 levels, numeric strings)
-export type TaskPriority = '1' | '2' | '3' | '4' | '5';
+// Re-export for backward compatibility
+export type { TaskPriority, TaskStatus };
+export { PRIORITY_COLORS };
 
 export interface Assignee {
   initial: string;
@@ -38,18 +44,9 @@ export interface Task {
 // Helper type for tasks grouped by status
 export type TasksByStatus = Record<TaskStatus, Task[]>;
 
-// Priority color mapping (5 levels)
-export const PRIORITY_COLORS: Record<TaskPriority, string> = {
-  '1': 'bg-red-100 text-red-800',
-  '2': 'bg-orange-100 text-orange-800',
-  '3': 'bg-yellow-100 text-yellow-800',
-  '4': 'bg-blue-100 text-blue-800',
-  '5': 'bg-gray-100 text-gray-800',
-};
-
-// Helper function to get priority color
+// Helper function to get priority color (uses config)
 export function getPriorityColor(priority: TaskPriority): string {
-  return PRIORITY_COLORS[priority];
+  return getPriorityConfig(priority)?.tailwind_class || PRIORITY_COLORS[priority];
 }
 
 // API Query Filters

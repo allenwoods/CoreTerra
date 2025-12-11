@@ -1,6 +1,7 @@
 import { memo, type CSSProperties } from 'react';
 import { Link2 } from 'lucide-react';
 import type { Task } from '@/types/task';
+import { getPriorityColor } from '@/types/task';
 import { getIcon } from '@/lib/iconMap';
 
 interface TaskCardProps {
@@ -50,7 +51,7 @@ function TaskCard({ task, isDone = false, onClick, style }: TaskCardProps) {
 
           {/* Priority Badge */}
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${task.priorityColor}`}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide ${getPriorityColor(task.priority)}`}
           >
             {task.priority}
           </span>

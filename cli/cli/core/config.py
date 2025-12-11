@@ -1,12 +1,16 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
+from functools import lru_cache
 import typer
 
 APP_NAME = "coreterra"
 CONFIG_DIR = Path.home() / ".coreterra"
 CONFIG_FILE = CONFIG_DIR / "config.json"
+
+# Path to centralized enum configuration
+ENUM_CONFIG_PATH = Path(__file__).parent.parent.parent.parent / "config" / "enums.json"
 
 def get_config_path() -> Path:
     return CONFIG_FILE
@@ -44,3 +48,28 @@ def ensure_logged_in():
         typer.echo("Not logged in. Please run 'core login <username>' first.")
         raise typer.Exit(code=1)
     return user_id
+
+# Enum configuration loader
+@lru_cache(maxsize=1)
+def load_enum_config() -> Dict[str, Any]:
+    """Load enum configuration from JSON file."""
+    with open(ENUM_CONFIG_PATH, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def get_priority_choices() -> List[str]:
+    """Get priority choices for Typer."""
+    config = load_enum_config()
+    return [p["value"] for p in config["priorities"]]
+
+def get_default_priority() -> str:
+    """Get default priority."""
+    config = load_enum_config()
+    return config["defaults"]["priority"]
+
+def get_priority_label(value: str) -> str:
+    """Get display label for a priority value."""
+    config = load_enum_config()
+    for p in config["priorities"]:
+        if p["value"] == value:
+            return p["label"]
+    return f"P{value}"

@@ -1,9 +1,8 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Task, TasksByStatus, TaskStatus } from '@/types/task';
 import { initialLogs } from '@/lib/mockData';
-import { getPriorityColor } from '@/types/task';
-import { getTasks, createTask as apiCreateTask, updateTaskMetadata } from '@/lib/api';
+import { getTasks, createTask as apiCreateTask } from '@/lib/api';
+import { DEFAULT_PRIORITY, DEFAULT_TASK_TYPE } from '@/config/enums';
 
 interface TaskContextType {
   // State
@@ -129,9 +128,9 @@ export function TaskProvider({ children }: TaskProviderProps) {
       const newTask = await apiCreateTask({
         title,
         user_id: userId,
-        priority: '3',
+        priority: DEFAULT_PRIORITY,
         body,
-        type: 'Capture',
+        type: DEFAULT_TASK_TYPE,
       });
 
       // If parentId, we'd need to update the parent_id field via PATCH

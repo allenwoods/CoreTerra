@@ -1,37 +1,17 @@
 from datetime import datetime
 from typing import List, Optional
-from enum import Enum
 from pydantic import BaseModel, Field, UUID4, ConfigDict
+from src.config import (
+    create_enum_from_config,
+    get_default_priority,
+    get_default_task_type
+)
 
-class Status(str, Enum):
-    INBOX = "inbox"
-    ACTIVE = "active"
-    NEXT = "next"
-    WAITING = "waiting"
-    DONE = "done"
-    COMPLETED = "completed"
-    ARCHIVED = "archived"
-
-class Priority(str, Enum):
-    P1 = "1"
-    P2 = "2"
-    P3 = "3"
-    P4 = "4"
-    P5 = "5"
-
-class Role(str, Enum):
-    BACKEND_ENGINEER = "backend-engineer"
-    FRONTEND_ENGINEER = "frontend-engineer"
-    UI_DESIGNER = "ui-designer"
-    DEVOPS_ENGINEER = "devops-engineer"
-    PRODUCT_MANAGER = "product-manager"
-
-class TaskType(str, Enum):
-    CAPTURE = "Capture"
-    NEXT_ACTION = "NextAction"
-    PROJECT = "Project"
-    REFERENCE = "Reference"
-    WAITING_FOR = "WaitingFor"
+# Create enums dynamically from centralized config
+Status = create_enum_from_config("Status", "statuses")
+Priority = create_enum_from_config("Priority", "priorities")
+Role = create_enum_from_config("Role", "roles")
+TaskType = create_enum_from_config("TaskType", "task_types")
 
 class User(BaseModel):
     user_id: UUID4
@@ -74,11 +54,11 @@ class TaskCreateRequest(BaseModel):
     """Request model for creating a new task."""
     title: str
     user_id: UUID4
-    priority: Optional[Priority] = Priority.P3
+    priority: Optional[Priority] = Field(default_factory=lambda: Priority(get_default_priority()))
     tags: Optional[List[str]] = None
     body: Optional[str] = ""
     role_owner: Optional[Role] = None
-    type: TaskType = TaskType.CAPTURE
+    type: TaskType = Field(default_factory=lambda: TaskType(get_default_task_type()))
 
 class TaskStatusUpdateRequest(BaseModel):
     status: Status

@@ -14,20 +14,20 @@ def test_review_establishes_priority_hierarchy(client, temp_workspace):
     t1 = client.post("/tasks/", json={
         "title": "Low Prio",
         "user_id": TEST_USER_ID,
-        "type": TaskType.CAPTURE
+        "type": "Capture"
     }).json()
     t2 = client.post("/tasks/", json={
         "title": "High Prio",
         "user_id": TEST_USER_ID,
-        "type": TaskType.CAPTURE
+        "type": "Capture"
     }).json()
 
     print(f"Created T1: {t1['id']}")
     print(f"Created T2: {t2['id']}")
 
     # Set Priorities
-    client.patch(f"/tasks/{t1['id']}", json={"priority": Priority.P1, "updated_at": t1["updated_at"]})
-    client.patch(f"/tasks/{t2['id']}", json={"priority": Priority.P5, "updated_at": t2["updated_at"]})
+    client.patch(f"/tasks/{t1['id']}", json={"priority": "1", "updated_at": t1["updated_at"]})
+    client.patch(f"/tasks/{t2['id']}", json={"priority": "5", "updated_at": t2["updated_at"]})
 
     # Fetch list sorted by priority
     resp = client.get("/tasks/?sort_by=priority&order=desc")
@@ -53,7 +53,7 @@ def test_review_creates_commitment(client, temp_workspace):
     t = client.post("/tasks/", json={
         "title": "Commitment Test",
         "user_id": TEST_USER_ID,
-        "type": TaskType.CAPTURE
+        "type": "Capture"
     }).json()
 
     # Commit to a date

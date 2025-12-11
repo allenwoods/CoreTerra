@@ -20,6 +20,7 @@ import {
 import { useUserContext } from '@/context/UserContext';
 import { useTaskContext } from '@/context/TaskContext';
 import type { TaskPriority } from '@/types/task';
+import { PRIORITIES, DEFAULT_PRIORITY } from '@/config/enums';
 
 interface CreateTaskModalProps {
   open: boolean;
@@ -35,7 +36,7 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
   // Form state
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState('');
-  const [priority, setPriority] = useState<TaskPriority>('3');
+  const [priority, setPriority] = useState<TaskPriority>(DEFAULT_PRIORITY as TaskPriority);
   const [roleOwner, setRoleOwner] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [creator, setCreator] = useState('');
@@ -49,7 +50,7 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
     if (open) {
       setTitle(initialTitle);
       setBody('');
-      setPriority('3');
+      setPriority(DEFAULT_PRIORITY as TaskPriority);
       setRoleOwner('');
       setDueDate('');
       setCreator('');
@@ -136,36 +137,14 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      P1 - 最高优先级
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="2">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      P2 - 高优先级
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="3">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      P3 - 中等优先级
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="4">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" />
-                      P4 - 低优先级
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="5">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-gray-500" />
-                      P5 - 最低优先级
-                    </span>
-                  </SelectItem>
+                  {PRIORITIES.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      <span className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${p.icon_color}`} />
+                        {p.label}
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
