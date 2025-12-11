@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useTaskContext } from '@/context/TaskContext';
 import type { Task, TaskStatus } from '@/types/task';
-import { getPriorityColor } from '@/types/task';
 
 /**
  * Hook that provides common task operations
@@ -23,7 +22,7 @@ export function useTaskOperations() {
       const updatedTask: Task = {
         ...task,
         status: 'next',
-        timestamp_commitment: new Date().toISOString(),
+        commitment_timestamp: new Date().toISOString(),
       };
 
       updateTask(updatedTask, `MOVED: ${task.id} moved to board (Next)`);
@@ -41,9 +40,9 @@ export function useTaskOperations() {
         status: newStatus,
       };
 
-      // Add completion timestamp if moving to done
-      if (newStatus === 'done') {
-        updatedTask.timestamp_completion = new Date().toISOString();
+      // Add completion timestamp if moving to done/completed
+      if (newStatus === 'done' || newStatus === 'completed') {
+        updatedTask.completion_timestamp = new Date().toISOString();
       }
 
       updateTask(updatedTask, `UPDATE: ${task.id} - Changed status to '${newStatus}'`);
@@ -60,11 +59,6 @@ export function useTaskOperations() {
         ...task,
         [field]: value,
       };
-
-      // Update priority color when priority changes
-      if (field === 'priority') {
-        updatedTask.priorityColor = getPriorityColor(value);
-      }
 
       updateTask(updatedTask, `UPDATE: ${task.id} - Changed ${field} to '${value}'`);
     },

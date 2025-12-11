@@ -35,7 +35,7 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
   // Form state
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState('');
-  const [priority, setPriority] = useState<TaskPriority>('p3');
+  const [priority, setPriority] = useState<TaskPriority>('3');
   const [roleOwner, setRoleOwner] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [creator, setCreator] = useState('');
@@ -49,7 +49,7 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
     if (open) {
       setTitle(initialTitle);
       setBody('');
-      setPriority('p3');
+      setPriority('3');
       setRoleOwner('');
       setDueDate('');
       setCreator('');
@@ -136,22 +136,34 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="p1">
+                  <SelectItem value="1">
                     <span className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-red-500" />
-                      P1 - 紧急
+                      P1 - 最高优先级
                     </span>
                   </SelectItem>
-                  <SelectItem value="p2">
+                  <SelectItem value="2">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-orange-500" />
+                      P2 - 高优先级
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="3">
                     <span className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      P2 - 重要
+                      P3 - 中等优先级
                     </span>
                   </SelectItem>
-                  <SelectItem value="p3">
+                  <SelectItem value="4">
                     <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-purple-500" />
-                      P3 - 一般
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      P4 - 低优先级
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="5">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-gray-500" />
+                      P5 - 最低优先级
                     </span>
                   </SelectItem>
                 </SelectContent>
