@@ -161,7 +161,8 @@ export interface UpdateTaskMetadataRequest {
   role_owner?: string | null;
   type?: string;
   title?: string;
-  updated_at: string;
+  body?: string;  // NEW: Support body updates
+  updated_at: string;  // Required for optimistic locking
 }
 
 export const updateTaskMetadata = async (

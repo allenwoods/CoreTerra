@@ -63,6 +63,12 @@ def clarify_task(task_id: UUID, request: TaskMetadataPatchRequest):
         updated_metadata.type = request.type
         commit_parts.append(f"type -> {request.type}")
 
+    # Handle body update
+    body_to_save = current_task.body
+    if request.body is not None:
+        body_to_save = request.body
+        commit_parts.append(f"body updated ({len(request.body)} chars)")
+
     # Update timestamp
     now = datetime.now(timezone.utc)
     updated_metadata.updated_at = now
@@ -70,10 +76,7 @@ def clarify_task(task_id: UUID, request: TaskMetadataPatchRequest):
     # 4. Save
     commit_msg = f"UPDATE: {task_id} - " + ", ".join(commit_parts)
 
-    # We pass the body from the current task since PATCH usually doesn't update body
-    # (unless we add body to PatchRequest, which isn't there yet).
-    # If body update is needed, we should add it to the schema.
-    # For now, preserve existing body.
-    saved_task = save_task(task_id, updated_metadata, current_task.body, commit_msg)
+    # Save with the updated body (if provided) or existing body
+    saved_task = save_task(task_id, updated_metadata, body_to_save, commit_msg)
 
     return saved_task

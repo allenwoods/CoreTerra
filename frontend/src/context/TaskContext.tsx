@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Task, TasksByStatus, TaskStatus } from '@/types/task';
 import { initialLogs } from '@/lib/mockData';
-import { getTasks, createTask as apiCreateTask } from '@/lib/api';
+import { getTasks, createTask as apiCreateTask, updateTaskStatus as apiUpdateTaskStatus, updateTaskMetadata as apiUpdateTaskMetadata, getTask } from '@/lib/api';
 import { DEFAULT_PRIORITY, DEFAULT_TASK_TYPE } from '@/config/enums';
+import type { UpdateTaskMetadataRequest } from '@/lib/api';
 
 interface TaskContextType {
   // State
@@ -49,36 +50,97 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Update an existing task
-  const updateTask = useCallback((updatedTask: Task, logMessage: string) => {
-    const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-    setActivityLog((prev) => [`[${timestamp}] ${logMessage}`, ...prev]);
+  const updateTask = useCallback(async (updatedTask: Task, logMessage: string) => {
+    try {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        throw new Error('User not logged in');
+      }
 
-    setTasks((prev) => {
-      const newTasks = { ...prev };
+      // Determine if this is a status change or metadata change
+      const isStatusChange = updatedTask.status !== selectedTask?.status;
 
-      // Find and remove the task from its current status
-      for (const status of Object.keys(newTasks) as TaskStatus[]) {
-        const idx = newTasks[status].findIndex((t) => t.id === updatedTask.id);
-        if (idx !== -1) {
-          newTasks[status] = [...newTasks[status]];
-          newTasks[status].splice(idx, 1);
-          break;
+      let savedTask: Task;
+
+      if (isStatusChange) {
+        // Use PUT /tasks/{id}/status
+        savedTask = await apiUpdateTaskStatus(updatedTask.id, {
+          status: updatedTask.status,
+          user_id: userId,
+          updated_at: updatedTask.updated_at,
+        });
+      } else {
+        // Use PATCH /tasks/{id} for metadata/body changes
+        const patchData: UpdateTaskMetadataRequest = {
+          updated_at: updatedTask.updated_at,
+        };
+
+        // Only include changed fields
+        if (selectedTask) {
+          if (updatedTask.title !== selectedTask.title) patchData.title = updatedTask.title;
+          if (updatedTask.body !== selectedTask.body) patchData.body = updatedTask.body;
+          if (updatedTask.priority !== selectedTask.priority) patchData.priority = updatedTask.priority;
+          if (updatedTask.role_owner !== selectedTask.role_owner) patchData.role_owner = updatedTask.role_owner;
+          if (updatedTask.due_date !== selectedTask.due_date) patchData.due_date = updatedTask.due_date;
+          if (JSON.stringify(updatedTask.tags) !== JSON.stringify(selectedTask.tags)) patchData.tags = updatedTask.tags;
+          if (updatedTask.type !== selectedTask.type) patchData.type = updatedTask.type;
         }
+
+        savedTask = await apiUpdateTaskMetadata(updatedTask.id, patchData);
       }
 
-      // Add the task to its new status
-      const targetStatus = updatedTask.status || 'inbox';
-      if (!newTasks[targetStatus]) {
-        newTasks[targetStatus] = [];
+      // Update local state with response from backend
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+      setActivityLog((prev) => [`[${timestamp}] ${logMessage}`, ...prev]);
+
+      setTasks((prev) => {
+        const newTasks = { ...prev };
+
+        // Remove from old status
+        for (const status of Object.keys(newTasks) as TaskStatus[]) {
+          const idx = newTasks[status].findIndex((t) => t.id === savedTask.id);
+          if (idx !== -1) {
+            newTasks[status] = [...newTasks[status]];
+            newTasks[status].splice(idx, 1);
+            break;
+          }
+        }
+
+        // Add to new status
+        const targetStatus = savedTask.status || 'inbox';
+        if (!newTasks[targetStatus]) {
+          newTasks[targetStatus] = [];
+        }
+        newTasks[targetStatus] = [savedTask, ...newTasks[targetStatus]];
+
+        return newTasks;
+      });
+
+      // Update selected task with saved version (includes new updated_at)
+      setSelectedTask(savedTask);
+
+    } catch (err: any) {
+      // Handle optimistic locking conflicts
+      if (err.response?.status === 409) {
+        setError('Task has been modified by another user. Refreshing...');
+
+        // Fetch latest version
+        await fetchTasks();
+
+        // Reload the task detail if still selected
+        if (selectedTask?.id === updatedTask.id) {
+          const latest = await getTask(updatedTask.id);
+          setSelectedTask(latest);
+        }
+
+        alert('Task was modified by another user. Your changes were not saved. Please review and try again.');
+      } else {
+        setError(err.message || 'Failed to update task');
+        console.error('Error updating task:', err);
+        alert(`Failed to update task: ${err.message}`);
       }
-      newTasks[targetStatus] = [updatedTask, ...newTasks[targetStatus]];
-
-      return newTasks;
-    });
-
-    // Update selected task if it's the one being updated
-    setSelectedTask(updatedTask);
-  }, []);
+    }
+  }, [selectedTask, fetchTasks]);
 
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {

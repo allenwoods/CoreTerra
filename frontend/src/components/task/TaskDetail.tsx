@@ -66,7 +66,7 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   }, [task]);
 
   // Save changes
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedTask: Task = {
       ...task,
       title,
@@ -78,9 +78,10 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
       reviewer: reviewer || null,
       collaborator: collaborator || null,
       project: project || undefined,
+      updated_at: task.updated_at,  // CRITICAL: For optimistic locking
     };
 
-    updateTask(updatedTask, `UPDATE: ${task.id} - ${task.title}`);
+    await updateTask(updatedTask, `UPDATE: ${task.id} - ${task.title}`);
     setIsEditing(false);
   };
 
@@ -91,17 +92,24 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
       return;
     }
 
-    // Save first if editing
-    if (isEditing) {
-      handleSave();
-    }
+    // Build task with all current edits
+    const taskToMove: Task = {
+      ...task,
+      title,
+      body,
+      priority,
+      role_owner: roleOwner,
+      due_date: dueDate,
+      creator: creator || null,
+      reviewer: reviewer || null,
+      collaborator: collaborator || null,
+      project: project || undefined,
+      updated_at: task.updated_at,  // Pass current timestamp for optimistic locking
+    };
 
     try {
-      moveToBoard({
-        ...task,
-        role_owner: roleOwner,
-        due_date: dueDate,
-      });
+      moveToBoard(taskToMove);
+      setIsEditing(false);
     } catch (error) {
       alert((error as Error).message);
     }
