@@ -49,6 +49,39 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch tasks from API
+  const fetchTasks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const tasksData = await getTasks();
+      // Group by status
+      const grouped: TasksByStatus = {
+        inbox: [],
+        active: [],
+        next: [],
+        waiting: [],
+        done: [],
+        completed: [],
+        archived: [],
+      };
+
+      tasksData.forEach((task) => {
+        if (grouped[task.status]) {
+          grouped[task.status].push(task);
+        }
+      });
+
+      setTasks(grouped);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to fetch tasks');
+      console.error('Error fetching tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Update an existing task
   const updateTask = useCallback(async (updatedTask: Task, logMessage: string) => {
     try {
@@ -119,9 +152,10 @@ export function TaskProvider({ children }: TaskProviderProps) {
       // Update selected task with saved version (includes new updated_at)
       setSelectedTask(savedTask);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle optimistic locking conflicts
-      if (err.response?.status === 409) {
+      const error = err as { response?: { status: number }; message?: string };
+      if (error.response?.status === 409) {
         setError('Task has been modified by another user. Refreshing...');
 
         // Fetch latest version
@@ -135,44 +169,12 @@ export function TaskProvider({ children }: TaskProviderProps) {
 
         alert('Task was modified by another user. Your changes were not saved. Please review and try again.');
       } else {
-        setError(err.message || 'Failed to update task');
-        console.error('Error updating task:', err);
-        alert(`Failed to update task: ${err.message}`);
+        setError(error.message || 'Failed to update task');
+        console.error('Error updating task:', error);
+        alert(`Failed to update task: ${error.message || 'Unknown error'}`);
       }
     }
   }, [selectedTask, fetchTasks]);
-
-  // Fetch tasks from API
-  const fetchTasks = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const tasksData = await getTasks();
-      // Group by status
-      const grouped: TasksByStatus = {
-        inbox: [],
-        active: [],
-        next: [],
-        waiting: [],
-        done: [],
-        completed: [],
-        archived: [],
-      };
-
-      tasksData.forEach((task) => {
-        if (grouped[task.status]) {
-          grouped[task.status].push(task);
-        }
-      });
-
-      setTasks(grouped);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tasks');
-      console.error('Error fetching tasks:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   // Load tasks on mount
   useEffect(() => {
@@ -205,9 +207,10 @@ export function TaskProvider({ children }: TaskProviderProps) {
       const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
       const parentInfo = parentId ? ` (subtask of #${parentId})` : '';
       setActivityLog((prev) => [`[${timestamp}] Created Task #${newTask.id}: '${title}'${parentInfo}`, ...prev]);
-    } catch (err: any) {
-      console.error('Error creating task:', err);
-      setError(err.message || 'Failed to create task');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error('Error creating task:', error);
+      setError(error.message || 'Failed to create task');
     }
   }, []);
 
@@ -286,6 +289,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
 }
 
 // Hook to use TaskContext
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTaskContext() {
   const context = useContext(TaskContext);
   if (context === undefined) {

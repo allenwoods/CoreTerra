@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
-import uuid
 from uuid import UUID
-from src.schemas import TaskMetadataPatchRequest, TaskMetadataResponse, TaskFullResponse
+from src.schemas import TaskMetadataPatchRequest, TaskMetadataResponse
 from src.storage import get_task, save_task
 
 router = APIRouter()

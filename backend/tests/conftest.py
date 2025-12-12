@@ -4,7 +4,6 @@ import tempfile
 import pytest
 from fastapi.testclient import TestClient
 from src.main import app
-import sqlite3
 import git
 
 @pytest.fixture(scope="function")

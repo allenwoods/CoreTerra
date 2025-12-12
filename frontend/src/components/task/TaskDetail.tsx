@@ -52,6 +52,7 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   const parentTask = task.parent_id ? getTaskById(task.parent_id) : undefined;
 
   // Update local state when task changes
+  // Multiple setState calls are intentional to sync prop changes to local state
   useEffect(() => {
     setTitle(task.title);
     setBody(task.body);
@@ -63,6 +64,7 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
     setCollaborator(task.collaborator || '');
     setProject(task.project || '');
     setIsEditing(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task]);
 
   // Save changes

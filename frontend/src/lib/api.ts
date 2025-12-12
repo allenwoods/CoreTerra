@@ -64,10 +64,22 @@ export const login = async (username: string): Promise<LoginResponse> => {
   return response.data;
 };
 
+// Backend user response interface
+interface UserResponse {
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+  color: string;
+  level: number;
+  experience: number;
+}
+
 export const getUsers = async (): Promise<User[]> => {
   // Backend returns UserResponse { user_id, ... }
   // We need to map it to User { id, ... }
-  const response = await api.get<any[]>('/users');
+  const response = await api.get<UserResponse[]>('/users');
   return response.data.map((u) => ({
     id: u.user_id,
     name: u.name,

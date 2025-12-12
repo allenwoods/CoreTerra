@@ -1,6 +1,3 @@
-import pytest
-from src.schemas import TaskType, Priority
-from uuid import uuid4
 
 # Use valid UUID for testing
 TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000"
