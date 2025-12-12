@@ -144,6 +144,61 @@ These models form the strict schema for the API endpoints detailed in the next s
 
 为了处理可能由 UI 和 CLI 同时操作引发的竞态条件，我们引入了乐观锁机制。
 
+### 3.6 检索任务历史 (Retrieve Task History)
+
+- **方法与路径**: `GET /tasks/{task_id}/history`
+- **描述**: 获取任务的完整 Git 提交历史，用于审计和追踪变更。此端点利用 Git 版本控制系统提供的不可篡改历史记录，返回影响指定任务文件的所有提交信息。
+- **路径参数 (Path Parameters)**: `task_id` (str)
+- **查询参数 (Query Parameters)**:
+
+| 参数 (Parameter) | 类型 (Type) | 描述 (Description) |
+|-----------------|------------|-------------------|
+| limit | int | 限制返回的提交数量 (可选,默认返回全部)。建议前端使用 limit=50 以平衡完整性与性能。 |
+
+- **成功响应 (Success Response)**:
+  - **状态码**: `200 OK`
+  - **响应体**: `List[TaskHistoryItem]` 对象数组,按时间倒序排列 (最新的在前)。
+  - **重要说明**: 如果任务不存在,返回空数组 (不返回 404)。这是有意为之的设计,允许查看已删除任务的 Git 历史。
+
+**响应模型 (Response Model)**:
+
+```python
+class TaskHistoryItem(BaseModel):
+    commit_hash: str        # Git commit SHA-1 哈希值
+    author_name: str        # 提交者姓名
+    author_email: str       # 提交者邮箱
+    timestamp: datetime     # 提交时间 (ISO 8601 格式)
+    message: str           # Git 提交信息
+```
+
+**示例响应 (Example Response)**:
+
+```json
+[
+  {
+    "commit_hash": "a1b2c3d4e5f6789...",
+    "author_name": "Alex",
+    "author_email": "alex@coreterra.io",
+    "timestamp": "2025-12-12T10:30:00Z",
+    "message": "UPDATE: 550e8400-... - status -> active"
+  },
+  {
+    "commit_hash": "9f8e7d6c5b4a321...",
+    "author_name": "Alex",
+    "author_email": "alex@coreterra.io",
+    "timestamp": "2025-12-12T10:15:00Z",
+    "message": "UPDATE: 550e8400-... - priority -> 5"
+  },
+  {
+    "commit_hash": "1a2b3c4d5e6f7g8...",
+    "author_name": "Alex",
+    "author_email": "alex@coreterra.io",
+    "timestamp": "2025-12-12T10:00:00Z",
+    "message": "ADD: Implement Git history API"
+  }
+]
+```
+
 ## 4.0 并发控制：乐观锁机制
 
 为防止因并发写入导致的数据覆盖（“最后写入者获胜”）和审计历史记录损坏，系统必须实现乐观锁机制。这在 UI 和 CLI 可能同时操作同一任务的场景下尤为关键。

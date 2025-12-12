@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
-from src.schemas import TaskMetadataResponse, TaskFullResponse
-from src.storage import get_task, list_tasks
+from src.schemas import TaskMetadataResponse, TaskFullResponse, TaskHistoryItem
+from src.storage import get_task, list_tasks, get_task_history
 from uuid import UUID
 
 router = APIRouter()
@@ -40,3 +40,25 @@ def read_tasks(
     return list_tasks(
         filters, tag=tag, sort_by=sort_by, order=order, limit=limit, offset=offset
     )
+
+
+@router.get("/tasks/{task_id}/history", response_model=List[TaskHistoryItem])
+def read_task_history(
+    task_id: UUID,
+    limit: Optional[int] = None
+):
+    """
+    Retrieves the Git commit history for a specific task.
+
+    Returns:
+        List of commit history items, ordered from newest to oldest
+
+    Note:
+        - Returns empty list if task not found (not 404)
+        - This is intentional to distinguish between "task never existed"
+          vs "task exists but has no history"
+    """
+    history_data = get_task_history(task_id, limit=limit)
+
+    # Convert dict list to Pydantic models
+    return [TaskHistoryItem(**item) for item in history_data]

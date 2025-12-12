@@ -18,6 +18,7 @@ import { useTaskContext } from '@/context/TaskContext';
 import { useTaskOperations } from '@/hooks/useTaskOperations';
 import MarkdownRenderer from './MarkdownRenderer';
 import SubtaskList from './SubtaskList';
+import { TaskHistory } from './TaskHistory';
 import type { Task, TaskStatus, TaskPriority } from '@/types/task';
 import { PRIORITY_COLORS } from '@/types/task';
 import { PRIORITIES } from '@/config/enums';
@@ -369,6 +370,9 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
             )}
           </div>
         </div>
+
+        {/* History Section */}
+        <TaskHistory taskId={task.id} />
 
         <Separator />
 

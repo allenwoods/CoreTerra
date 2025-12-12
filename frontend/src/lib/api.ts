@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { User } from '@/types/user';
 import type { Role } from '@/types/role';
-import type { Task, TaskFilters } from '@/types/task';
+import type { Task, TaskFilters, TaskHistoryItem } from '@/types/task';
 
 /**
  * Axios instance configured for CoreTerra API.
@@ -125,6 +125,15 @@ export const getTasks = async (filters?: TaskFilters): Promise<Task[]> => {
  */
 export const getTask = async (taskId: string): Promise<Task> => {
   const response = await api.get<Task>(`/tasks/${taskId}`);
+  return response.data;
+};
+
+/**
+ * Fetch Git commit history for a specific task.
+ */
+export const getTaskHistory = async (taskId: string, limit?: number): Promise<TaskHistoryItem[]> => {
+  const params = limit ? { limit } : {};
+  const response = await api.get<TaskHistoryItem[]>(`/tasks/${taskId}/history`, { params });
   return response.data;
 };
 
