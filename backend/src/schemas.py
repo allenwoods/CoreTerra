@@ -90,3 +90,15 @@ class TaskMetadataPatchRequest(BaseModel):
     title: Optional[str] = None
     body: Optional[str] = None  # NEW: Allow body updates
     updated_at: datetime
+
+
+class TaskHistoryItem(BaseModel):
+    """Single history entry for a task, representing one Git commit."""
+
+    commit_hash: str
+    author_name: str
+    author_email: str
+    timestamp: datetime
+    message: str
+
+    model_config = ConfigDict(from_attributes=True)

@@ -414,3 +414,57 @@ def list_tasks(
 
     conn.close()
     return tasks
+
+
+def get_task_history(task_id: UUID, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+    """
+    Retrieves the Git commit history for a specific task.
+
+    Args:
+        task_id: UUID of the task
+        limit: Optional maximum number of commits to return (default: all)
+
+    Returns:
+        List of commit metadata dictionaries, ordered from newest to oldest
+        Returns empty list if task file doesn't exist or has no commits
+
+    Raises:
+        No exceptions - returns empty list for missing tasks
+    """
+    data_dir, _ = _get_paths()
+    file_path = os.path.join(data_dir, f"{task_id}.md")
+
+    # Check if task file exists
+    if not os.path.exists(file_path):
+        return []
+
+    try:
+        repo = _get_repo()
+
+        # Get relative path from repo root for git operations
+        relative_path = os.path.relpath(file_path, data_dir)
+
+        # Build kwargs for iter_commits
+        kwargs = {}
+        if limit is not None:
+            kwargs['max_count'] = limit
+
+        # Iterate commits affecting this specific file
+        commits = repo.iter_commits(paths=relative_path, **kwargs)
+
+        history = []
+        for commit in commits:
+            history.append({
+                'commit_hash': commit.hexsha,
+                'author_name': commit.author.name,
+                'author_email': commit.author.email,
+                'timestamp': commit.committed_datetime,
+                'message': commit.message.strip()
+            })
+
+        return history
+
+    except Exception as e:
+        # Log error but don't crash - return empty history
+        print(f"Error retrieving history for task {task_id}: {e}")
+        return []
