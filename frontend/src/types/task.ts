@@ -59,3 +59,12 @@ export interface TaskFilters {
   limit?: number;
   offset?: number;
 }
+
+// Task History Item
+export interface TaskHistoryItem {
+  commit_hash: string;
+  author_name: string;
+  author_email: string;
+  timestamp: string;
+  message: string;
+}
