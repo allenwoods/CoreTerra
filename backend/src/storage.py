@@ -1,13 +1,11 @@
 import os
-import sqlite3
 import frontmatter
 from datetime import datetime, timezone
 from uuid import UUID
 from typing import List, Optional, Any, Dict
 from git import Repo, Actor
-from src.schemas import TaskMetadataBase, Status, Priority, Role, TaskType, TaskMetadataResponse, TaskFullResponse, User
+from src.schemas import TaskMetadataBase, TaskMetadataResponse, TaskFullResponse
 from src.users import get_git_author
-import json
 
 from src.database import get_db_connection, _get_paths
 

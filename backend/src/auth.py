@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from src.users import get_user_by_username, get_all_users

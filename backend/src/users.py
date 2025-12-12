@@ -1,6 +1,5 @@
 from typing import Tuple, Optional, List, Dict
 from uuid import UUID
-import sqlite3
 from src.database import get_db_connection
 
 def get_user_by_username(username: str) -> Optional[dict]:
