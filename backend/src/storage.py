@@ -4,11 +4,13 @@ from datetime import datetime, timezone
 from uuid import UUID
 from typing import List, Optional, Any, Dict
 from git import Repo, Actor
+
 from src.schemas import (
     TaskMetadataBase,
     TaskMetadataResponse,
     TaskFullResponse,
 )
+
 from src.users import get_git_author
 
 from src.database import get_db_connection, _get_paths

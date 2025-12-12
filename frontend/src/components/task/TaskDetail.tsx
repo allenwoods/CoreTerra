@@ -52,6 +52,7 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
   const parentTask = task.parent_id ? getTaskById(task.parent_id) : undefined;
 
   // Update local state when task changes
+  // Multiple setState calls are intentional to sync prop changes to local state
   useEffect(() => {
     setTitle(task.title);
     setBody(task.body);
@@ -63,10 +64,11 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
     setCollaborator(task.collaborator || '');
     setProject(task.project || '');
     setIsEditing(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task]);
 
   // Save changes
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedTask: Task = {
       ...task,
       title,
@@ -78,9 +80,10 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
       reviewer: reviewer || null,
       collaborator: collaborator || null,
       project: project || undefined,
+      updated_at: task.updated_at,  // CRITICAL: For optimistic locking
     };
 
-    updateTask(updatedTask, `UPDATE: ${task.id} - ${task.title}`);
+    await updateTask(updatedTask, `UPDATE: ${task.id} - ${task.title}`);
     setIsEditing(false);
   };
 
@@ -91,17 +94,24 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
       return;
     }
 
-    // Save first if editing
-    if (isEditing) {
-      handleSave();
-    }
+    // Build task with all current edits
+    const taskToMove: Task = {
+      ...task,
+      title,
+      body,
+      priority,
+      role_owner: roleOwner,
+      due_date: dueDate,
+      creator: creator || null,
+      reviewer: reviewer || null,
+      collaborator: collaborator || null,
+      project: project || undefined,
+      updated_at: task.updated_at,  // Pass current timestamp for optimistic locking
+    };
 
     try {
-      moveToBoard({
-        ...task,
-        role_owner: roleOwner,
-        due_date: dueDate,
-      });
+      moveToBoard(taskToMove);
+      setIsEditing(false);
     } catch (error) {
       alert((error as Error).message);
     }

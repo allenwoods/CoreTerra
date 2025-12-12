@@ -88,4 +88,5 @@ class TaskMetadataPatchRequest(BaseModel):
     role_owner: Optional[Role] = None
     type: Optional[TaskType] = None
     title: Optional[str] = None
+    body: Optional[str] = None  # NEW: Allow body updates
     updated_at: datetime
