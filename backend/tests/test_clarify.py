@@ -3,16 +3,16 @@ from src.schemas import TaskType
 # Use valid UUID for testing
 TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440000"
 
+
 def test_clarify_preserves_identity_while_enriching_context(client, seeded_workspace):
     """
     WHY: Clarification should add context (details, tags) without altering the task's fundamental identity or origin.
     """
     # Load existing task (simulating a task picked from inbox)
-    create_res = client.post("/tasks/", json={
-        "title": "Vague Idea",
-        "user_id": TEST_USER_ID,
-        "type": TaskType.CAPTURE
-    })
+    create_res = client.post(
+        "/tasks/",
+        json={"title": "Vague Idea", "user_id": TEST_USER_ID, "type": TaskType.CAPTURE},
+    )
     task = create_res.json()
     original_id = task["id"]
     original_timestamp = task["capture_timestamp"]
@@ -21,7 +21,7 @@ def test_clarify_preserves_identity_while_enriching_context(client, seeded_works
     patch_payload = {
         "title": "Specific Project Proposal",
         "tags": ["proposal", "Q4"],
-        "updated_at": task["updated_at"]
+        "updated_at": task["updated_at"],
     }
 
     resp = client.patch(f"/tasks/{original_id}", json=patch_payload)
@@ -29,12 +29,21 @@ def test_clarify_preserves_identity_while_enriching_context(client, seeded_works
     updated_task = resp.json()
 
     # WHY: Identity and Origin must remain immutable
-    assert updated_task["id"] == original_id, "Clarification must not change the task identity"
-    assert updated_task["capture_timestamp"] == original_timestamp, "Clarification must preserve the original capture timestamp"
+    assert updated_task["id"] == original_id, (
+        "Clarification must not change the task identity"
+    )
+    assert updated_task["capture_timestamp"] == original_timestamp, (
+        "Clarification must preserve the original capture timestamp"
+    )
 
     # WHY: Content must be enriched
-    assert updated_task["title"] != task["title"], "Clarification should refine the definition of the task"
-    assert set(updated_task["tags"]) == {"proposal", "Q4"}, "Clarification should add categorical context"
+    assert updated_task["title"] != task["title"], (
+        "Clarification should refine the definition of the task"
+    )
+    assert set(updated_task["tags"]) == {"proposal", "Q4"}, (
+        "Clarification should add categorical context"
+    )
+
 
 def test_clarify_enforces_optimistic_locking(client, temp_workspace):
     """
@@ -43,24 +52,30 @@ def test_clarify_enforces_optimistic_locking(client, temp_workspace):
     the system must reject User B's update to force a re-read.
     """
     # 1. Setup: Create a task
-    t = client.post("/tasks/", json={"title": "Shared Task", "user_id": TEST_USER_ID, "type": TaskType.CAPTURE}).json()
+    t = client.post(
+        "/tasks/",
+        json={
+            "title": "Shared Task",
+            "user_id": TEST_USER_ID,
+            "type": TaskType.CAPTURE,
+        },
+    ).json()
     task_id = t["id"]
     original_version = t["updated_at"]
 
     # 2. User A updates the task (e.g., adds a tag)
-    user_a_payload = {
-        "tags": ["tag-by-A"],
-        "updated_at": original_version
-    }
+    user_a_payload = {"tags": ["tag-by-A"], "updated_at": original_version}
     resp_a = client.patch(f"/tasks/{task_id}", json=user_a_payload)
     assert resp_a.status_code == 200
 
     # 3. User B tries to update the task using the NOW STALE original_version
     user_b_payload = {
         "tags": ["tag-by-B"],
-        "updated_at": original_version # This is the stale timestamp!
+        "updated_at": original_version,  # This is the stale timestamp!
     }
     resp_b = client.patch(f"/tasks/{task_id}", json=user_b_payload)
 
     # WHY: Data Integrity. We must not overwrite A's work blindly.
-    assert resp_b.status_code == 409, "System must reject updates based on stale data (Optimistic Locking)"
+    assert resp_b.status_code == 409, (
+        "System must reject updates based on stale data (Optimistic Locking)"
+    )

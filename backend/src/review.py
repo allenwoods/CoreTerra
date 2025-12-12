@@ -6,6 +6,7 @@ from uuid import UUID
 
 router = APIRouter()
 
+
 @router.get("/tasks/{task_id}", response_model=TaskFullResponse)
 def read_task(task_id: UUID):
     """
@@ -16,6 +17,7 @@ def read_task(task_id: UUID):
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
+
 @router.get("/tasks/", response_model=List[TaskMetadataResponse])
 def read_tasks(
     status: Optional[str] = None,
@@ -24,15 +26,17 @@ def read_tasks(
     sort_by: Optional[str] = None,
     order: Optional[str] = "asc",
     limit: Optional[int] = None,
-    offset: Optional[int] = 0
+    offset: Optional[int] = 0,
 ):
     """
     Lists tasks, optionally filtered by status, priority, tag, with pagination support.
     """
     filters = {}
     if status:
-        filters['status'] = status
+        filters["status"] = status
     if priority:
-        filters['priority'] = priority
+        filters["priority"] = priority
 
-    return list_tasks(filters, tag=tag, sort_by=sort_by, order=order, limit=limit, offset=offset)
+    return list_tasks(
+        filters, tag=tag, sort_by=sort_by, order=order, limit=limit, offset=offset
+    )

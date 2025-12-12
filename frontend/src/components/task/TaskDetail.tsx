@@ -124,7 +124,7 @@ function TaskDetail({ task, onClose, onTaskClick }: TaskDetailProps) {
 
   // Handle adding a new subtask (creates a new task with parent_id)
   const handleAddSubtask = (subtaskTitle: string) => {
-    createTask(subtaskTitle, '', task.id);
+    createTask({ title: subtaskTitle, body: '', parentId: task.id });
   };
 
   // Handle clicking on a subtask (navigate to it)

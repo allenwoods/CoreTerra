@@ -2,6 +2,7 @@ from src.schemas import User, Role
 
 TEST_USER_ID = "550e8400-e29b-41d4-a716-446655440001"
 
+
 def test_user_profile_structure(client, seeded_workspace):
     """
     WHY: Verify that user profiles are correctly structured and can be retrieved.
@@ -16,13 +17,14 @@ def test_user_profile_structure(client, seeded_workspace):
         avatar="http://example.com/avatar",
         color="bg-blue-500",
         level=5,
-        experience=250
+        experience=250,
     )
     assert u.username == "testuser"
     assert u.role == Role.BACKEND_ENGINEER
     assert str(u.user_id) == TEST_USER_ID
     assert u.level == 5
     assert u.experience == 250
+
 
 def test_user_role_validation():
     """
@@ -35,7 +37,7 @@ def test_user_role_validation():
         email="e",
         role=Role.FRONTEND_ENGINEER,
         avatar="",
-        color=""
+        color="",
     )
     assert u.role == Role.FRONTEND_ENGINEER
 
@@ -47,7 +49,7 @@ def test_user_role_validation():
             email="e",
             role="invalid-role",
             avatar="",
-            color=""
+            color="",
         )
         assert False, "Should have raised validation error"
     except ValueError:

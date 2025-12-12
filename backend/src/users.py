@@ -2,13 +2,14 @@ from typing import Tuple, Optional, List, Dict
 from uuid import UUID
 from src.database import get_db_connection
 
+
 def get_user_by_username(username: str) -> Optional[dict]:
     """Find user by username (case-insensitive)."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
         "SELECT user_id, username, email, role, avatar, color, level, experience FROM users WHERE LOWER(username) = LOWER(?)",
-        (username,)
+        (username,),
     )
     row = cursor.fetchone()
     conn.close()
@@ -22,9 +23,10 @@ def get_user_by_username(username: str) -> Optional[dict]:
             "avatar": row["avatar"],
             "color": row["color"],
             "level": row["level"],
-            "experience": row["experience"]
+            "experience": row["experience"],
         }
     return None
+
 
 def get_user_by_id(user_id: str) -> Optional[dict]:
     """Find user by user_id."""
@@ -32,7 +34,7 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
     cursor = conn.cursor()
     cursor.execute(
         "SELECT user_id, username, email, role, avatar, color, level, experience FROM users WHERE user_id = ?",
-        (user_id,)
+        (user_id,),
     )
     row = cursor.fetchone()
     conn.close()
@@ -46,31 +48,37 @@ def get_user_by_id(user_id: str) -> Optional[dict]:
             "avatar": row["avatar"],
             "color": row["color"],
             "level": row["level"],
-            "experience": row["experience"]
+            "experience": row["experience"],
         }
     return None
+
 
 def get_all_users() -> List[Dict]:
     """Returns a list of all users."""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT user_id, username, email, role, avatar, color, level, experience FROM users")
+    cursor.execute(
+        "SELECT user_id, username, email, role, avatar, color, level, experience FROM users"
+    )
     rows = cursor.fetchall()
     conn.close()
 
     users = []
     for row in rows:
-        users.append({
-            "user_id": row["user_id"], # Standardized to user_id
-            "name": row["username"],
-            "email": row["email"],
-            "role": row["role"],
-            "avatar": row["avatar"],
-            "color": row["color"],
-            "level": row["level"],
-            "experience": row["experience"]
-        })
+        users.append(
+            {
+                "user_id": row["user_id"],  # Standardized to user_id
+                "name": row["username"],
+                "email": row["email"],
+                "role": row["role"],
+                "avatar": row["avatar"],
+                "color": row["color"],
+                "level": row["level"],
+                "experience": row["experience"],
+            }
+        )
     return users
+
 
 def get_git_author(user_id: UUID) -> Optional[Tuple[str, str]]:
     """Returns (name, email) for git commits."""

@@ -139,6 +139,7 @@ export interface CreateTaskRequest {
   body?: string;
   role_owner?: string | null;
   type?: string;
+  due_date?: string | null;
 }
 
 export const createTask = async (data: CreateTaskRequest): Promise<Task> => {

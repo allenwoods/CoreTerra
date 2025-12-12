@@ -2,6 +2,7 @@
 Configuration loader for enum definitions.
 Loads enums from the centralized /config/enums.json file.
 """
+
 import json
 from pathlib import Path
 from typing import Dict, List, Any
@@ -14,7 +15,7 @@ CONFIG_PATH = Path(__file__).parent.parent.parent / "config" / "enums.json"
 @lru_cache(maxsize=1)
 def load_enum_config() -> Dict[str, Any]:
     """Load enum configuration from JSON file."""
-    with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 

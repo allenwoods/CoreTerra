@@ -22,7 +22,7 @@ function AppRoutes() {
   };
 
   const handleQuickAdd = (title: string) => {
-    createTask(title);
+    createTask({ title });
   };
 
   const handleCreateFull = (initialTitle?: string) => {

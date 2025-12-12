@@ -1,9 +1,20 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import type { Task, TasksByStatus, TaskStatus } from '@/types/task';
+import type { Task, TasksByStatus, TaskStatus, TaskPriority } from '@/types/task';
 import { initialLogs } from '@/lib/mockData';
 import { getTasks, createTask as apiCreateTask, updateTaskStatus as apiUpdateTaskStatus, updateTaskMetadata as apiUpdateTaskMetadata, getTask } from '@/lib/api';
 import { DEFAULT_PRIORITY, DEFAULT_TASK_TYPE } from '@/config/enums';
 import type { UpdateTaskMetadataRequest } from '@/lib/api';
+
+export interface CreateTaskData {
+  title: string;
+  body?: string;
+  parentId?: string;
+  priority?: TaskPriority;
+  role_owner?: string | null;
+  due_date?: string | null;
+  tags?: string[];
+  type?: string;
+}
 
 interface TaskContextType {
   // State
@@ -17,7 +28,7 @@ interface TaskContextType {
   // Task operations
   setSelectedTask: (task: Task | null) => void;
   updateTask: (task: Task, logMessage: string) => void;
-  createTask: (title: string, body?: string, parentId?: string) => void;
+  createTask: (data: CreateTaskData) => void;
   deleteTask: (taskId: string) => void;
   setFilterText: (text: string) => void;
   refetch: () => Promise<void>;
@@ -182,7 +193,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
   }, [fetchTasks]);
 
   // Create a new task (optionally as a subtask if parentId is provided)
-  const createTask = useCallback(async (title: string, body: string = '', parentId?: string) => {
+  const createTask = useCallback(async (data: CreateTaskData) => {
     try {
       const userId = localStorage.getItem('user_id');
       if (!userId) {
@@ -190,11 +201,14 @@ export function TaskProvider({ children }: TaskProviderProps) {
       }
 
       const newTask = await apiCreateTask({
-        title,
+        title: data.title,
         user_id: userId,
-        priority: DEFAULT_PRIORITY,
-        body,
-        type: DEFAULT_TASK_TYPE,
+        priority: data.priority || DEFAULT_PRIORITY,
+        body: data.body || '',
+        type: data.type || DEFAULT_TASK_TYPE,
+        role_owner: data.role_owner || null,
+        tags: data.tags || undefined,
+        due_date: data.due_date || null,
       });
 
       // If parentId, we'd need to update the parent_id field via PATCH
@@ -205,12 +219,13 @@ export function TaskProvider({ children }: TaskProviderProps) {
       }));
 
       const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-      const parentInfo = parentId ? ` (subtask of #${parentId})` : '';
-      setActivityLog((prev) => [`[${timestamp}] Created Task #${newTask.id}: '${title}'${parentInfo}`, ...prev]);
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      console.error('Error creating task:', error);
-      setError(error.message || 'Failed to create task');
+
+      const parentInfo = data.parentId ? ` (subtask of #${data.parentId})` : '';
+      setActivityLog((prev) => [`[${timestamp}] Created Task #${newTask.id}: '${data.title}'${parentInfo}`, ...prev]);
+    } catch (err: any) {
+      console.error('Error creating task:', err);
+      setError(err.message || 'Failed to create task');
+
     }
   }, []);
 
