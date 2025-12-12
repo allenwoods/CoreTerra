@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,8 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
   const [dueDate, setDueDate] = useState('');
   const [creator, setCreator] = useState('');
   const [project, setProject] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
 
   // Get parent task info if this is a subtask
   const parentTask = parentId ? getTaskById(parentId) : undefined;
@@ -56,6 +59,8 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
       setCreator('');
       // Inherit project from parent if creating subtask
       setProject(parentTask?.project || '');
+      setTags([]);
+      setTagInput('');
     }
   }, [open, initialTitle, parentTask?.project]);
 
@@ -67,19 +72,27 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
     }
 
     // Create task with all metadata
-    // Note: For now we use the simple createTask, but the full form data
-    // would be passed to backend in production
-    createTask(title.trim(), body, parentId);
+    createTask({
+      title: title.trim(),
+      body,
+      parentId,
+      priority,
+      role_owner: roleOwner || null,
+      due_date: dueDate || null,
+      tags: tags.length > 0 ? tags : undefined,
+    });
 
     // Close modal and reset
     onOpenChange(false);
     setTitle('');
     setBody('');
-    setPriority('p3');
+    setPriority(DEFAULT_PRIORITY as TaskPriority);
     setRoleOwner('');
     setDueDate('');
     setCreator('');
     setProject('');
+    setTags([]);
+    setTagInput('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -215,6 +228,42 @@ function CreateTaskModal({ open, onOpenChange, initialTitle = '', parentId }: Cr
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="tags">标签</Label>
+              <div className="flex gap-2 flex-wrap mb-2">
+                {tags.map((tag, idx) => (
+                  <Badge key={idx} variant="secondary" className="gap-1">
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags(tags.filter((_, i) => i !== idx))}
+                      className="ml-1 hover:text-destructive"
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <Input
+                id="tags"
+                placeholder="输入标签后按Enter添加..."
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const trimmed = tagInput.trim();
+                    if (trimmed && !tags.includes(trimmed)) {
+                      setTags([...tags, trimmed]);
+                      setTagInput('');
+                    }
+                  }
+                }}
+              />
+              <p className="text-xs text-gray-400">提示: 支持多标签,按Enter添加</p>
             </div>
           </div>
 
