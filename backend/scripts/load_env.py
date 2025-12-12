@@ -10,6 +10,7 @@ that can be sourced by the shell before starting the servers.
 
 It also generates a .env file in the frontend directory for Vite to read.
 """
+
 import json
 import sys
 from pathlib import Path
@@ -63,7 +64,9 @@ def main() -> None:
 
     # Output for backend (shell export)
     print(f'export CORETERRA_USER_ID="{config.get("user_id", "")}"')
-    print(f'export CORETERRA_API_URL="{config.get("api_url", "http://localhost:8000")}"')
+    print(
+        f'export CORETERRA_API_URL="{config.get("api_url", "http://localhost:8000")}"'
+    )
 
     # Output for frontend (Vite requires VITE_ prefix)
     print(f'export VITE_API_URL="{config.get("api_url", "http://localhost:8000")}"')

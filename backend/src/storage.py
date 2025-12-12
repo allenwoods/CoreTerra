@@ -1,15 +1,18 @@
 import os
-import sqlite3
 import frontmatter
 from datetime import datetime, timezone
 from uuid import UUID
 from typing import List, Optional, Any, Dict
 from git import Repo, Actor
-from src.schemas import TaskMetadataBase, Status, Priority, Role, TaskType, TaskMetadataResponse, TaskFullResponse, User
+from src.schemas import (
+    TaskMetadataBase,
+    TaskMetadataResponse,
+    TaskFullResponse,
+)
 from src.users import get_git_author
-import json
 
 from src.database import get_db_connection, _get_paths
+
 
 def _get_repo() -> Repo:
     """Gets or initializes the Git repository."""
@@ -22,8 +25,11 @@ def _get_repo() -> Repo:
         # Configure local user if not present (fallback)
         if not repo.config_reader().has_option("user", "email"):
             repo.config_writer().set_value("user", "name", "System").release()
-            repo.config_writer().set_value("user", "email", "system@coreterra.io").release()
+            repo.config_writer().set_value(
+                "user", "email", "system@coreterra.io"
+            ).release()
     return repo
+
 
 def save_user_to_file_and_db(user_data: Dict[str, Any]):
     """
@@ -38,7 +44,7 @@ def save_user_to_file_and_db(user_data: Dict[str, Any]):
     file_path = os.path.join(users_dir, f"{user_id}.md")
 
     # 1. Write MyST file
-    post = frontmatter.Post("") # Empty content for now
+    post = frontmatter.Post("")  # Empty content for now
     post.metadata = user_data
 
     with open(file_path, "wb") as f:
@@ -50,29 +56,37 @@ def save_user_to_file_and_db(user_data: Dict[str, Any]):
 
     # System commit for user creation
     author = Actor("System", "system@coreterra.io")
-    repo.index.commit(f"feat: Create/Update user {user_data['username']}", author=author, committer=author)
+    repo.index.commit(
+        f"feat: Create/Update user {user_data['username']}",
+        author=author,
+        committer=author,
+    )
 
     # 3. Update SQLite
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT OR REPLACE INTO users (user_id, username, email, role, avatar, color, level, experience, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        user_id,
-        user_data["username"],
-        user_data["email"],
-        user_data["role"],
-        user_data["avatar"],
-        user_data["color"],
-        user_data.get("level", 1),
-        user_data.get("experience", 0),
-        user_data.get("created_at", datetime.now(timezone.utc).isoformat())
-    ))
+    """,
+        (
+            user_id,
+            user_data["username"],
+            user_data["email"],
+            user_data["role"],
+            user_data["avatar"],
+            user_data["color"],
+            user_data.get("level", 1),
+            user_data.get("experience", 0),
+            user_data.get("created_at", datetime.now(timezone.utc).isoformat()),
+        ),
+    )
 
     conn.commit()
     conn.close()
+
 
 def init_default_users():
     """Insert default users if they don't exist."""
@@ -88,12 +102,54 @@ def init_default_users():
 
     default_users = [
         # (user_id, username, email, role, avatar, color)
-        ("550e8400-e29b-41d4-a716-446655440000", "Test User", "test@example.com", "backend-engineer", "https://i.pravatar.cc/150?u=test", "bg-gray-500"),
-        ("u1", "Alex", "alex@coreterra.io", "frontend-engineer", "https://i.pravatar.cc/150?u=alex", "bg-blue-500"),
-        ("u2", "Brenda", "brenda@coreterra.io", "devops-engineer", "https://i.pravatar.cc/150?u=brenda", "bg-purple-500"),
-        ("u3", "Charles", "charles@coreterra.io", "backend-engineer", "https://i.pravatar.cc/150?u=charles", "bg-red-500"),
-        ("u4", "David", "david@coreterra.io", "backend-engineer", "https://i.pravatar.cc/150?u=david", "bg-green-500"),
-        ("u5", "Sarah", "sarah@coreterra.io", "ui-designer", "https://i.pravatar.cc/150?u=sarah", "bg-yellow-500"),
+        (
+            "550e8400-e29b-41d4-a716-446655440000",
+            "Test User",
+            "test@example.com",
+            "backend-engineer",
+            "https://i.pravatar.cc/150?u=test",
+            "bg-gray-500",
+        ),
+        (
+            "u1",
+            "Alex",
+            "alex@coreterra.io",
+            "frontend-engineer",
+            "https://i.pravatar.cc/150?u=alex",
+            "bg-blue-500",
+        ),
+        (
+            "u2",
+            "Brenda",
+            "brenda@coreterra.io",
+            "devops-engineer",
+            "https://i.pravatar.cc/150?u=brenda",
+            "bg-purple-500",
+        ),
+        (
+            "u3",
+            "Charles",
+            "charles@coreterra.io",
+            "backend-engineer",
+            "https://i.pravatar.cc/150?u=charles",
+            "bg-red-500",
+        ),
+        (
+            "u4",
+            "David",
+            "david@coreterra.io",
+            "backend-engineer",
+            "https://i.pravatar.cc/150?u=david",
+            "bg-green-500",
+        ),
+        (
+            "u5",
+            "Sarah",
+            "sarah@coreterra.io",
+            "ui-designer",
+            "https://i.pravatar.cc/150?u=sarah",
+            "bg-yellow-500",
+        ),
     ]
 
     now = datetime.now(timezone.utc).isoformat()
@@ -105,9 +161,10 @@ def init_default_users():
             "role": role,
             "avatar": avatar,
             "color": color,
-            "created_at": now
+            "created_at": now,
         }
         save_user_to_file_and_db(user_data)
+
 
 def init_db():
     """Initializes the SQLite database schema."""
@@ -152,7 +209,10 @@ def init_db():
     # Initialize default data
     init_default_users()
 
-def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_message: str) -> TaskMetadataResponse:
+
+def save_task(
+    task_id: UUID, metadata: TaskMetadataBase, body: str, commit_message: str
+) -> TaskMetadataResponse:
     """
     Saves a task:
     1. Writes MyST file.
@@ -166,10 +226,10 @@ def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_messa
     # 1. Write MyST file
     post = frontmatter.Post(body)
     # Convert Pydantic model to dict, excluding None to keep frontmatter clean
-    meta_dict = metadata.model_dump(exclude_none=True, mode='json')
+    meta_dict = metadata.model_dump(exclude_none=True, mode="json")
     # Filter out body from metadata if it slipped in
-    if 'body' in meta_dict:
-        del meta_dict['body']
+    if "body" in meta_dict:
+        del meta_dict["body"]
 
     post.metadata = meta_dict
 
@@ -198,16 +258,23 @@ def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_messa
             "status": metadata.status.value,
             "priority": metadata.priority.value if metadata.priority else None,
             "role_owner": metadata.role_owner.value if metadata.role_owner else None,
-            "timestamp_capture": metadata.capture_timestamp.isoformat() if metadata.capture_timestamp else None,
-            "timestamp_commitment": metadata.commitment_timestamp.isoformat() if metadata.commitment_timestamp else None,
-            "timestamp_completion": metadata.completion_timestamp.isoformat() if metadata.completion_timestamp else None,
+            "timestamp_capture": metadata.capture_timestamp.isoformat()
+            if metadata.capture_timestamp
+            else None,
+            "timestamp_commitment": metadata.commitment_timestamp.isoformat()
+            if metadata.commitment_timestamp
+            else None,
+            "timestamp_completion": metadata.completion_timestamp.isoformat()
+            if metadata.completion_timestamp
+            else None,
             "due_date": metadata.due_date.isoformat() if metadata.due_date else None,
             "updated_at": metadata.updated_at.isoformat(),
             "title": metadata.title,
-            "user_id": str(metadata.user_id)
+            "user_id": str(metadata.user_id),
         }
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO tasks (
                 ct_id, status, priority, role_owner, timestamp_capture,
                 timestamp_commitment, timestamp_completion, due_date, updated_at, title, user_id
@@ -215,7 +282,9 @@ def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_messa
                 :ct_id, :status, :priority, :role_owner, :timestamp_capture,
                 :timestamp_commitment, :timestamp_completion, :due_date, :updated_at, :title, :user_id
             )
-        """, sql_data)
+        """,
+            sql_data,
+        )
 
         conn.commit()
         conn.close()
@@ -234,6 +303,7 @@ def save_task(task_id: UUID, metadata: TaskMetadataBase, body: str, commit_messa
         raise e
 
     return TaskMetadataResponse(**meta_dict)
+
 
 def get_task(task_id: UUID) -> Optional[TaskFullResponse]:
     """Retrieves a task from file system."""
@@ -254,7 +324,15 @@ def get_task(task_id: UUID) -> Optional[TaskFullResponse]:
         print(f"Error parsing task {task_id}: {e}")
         return None
 
-def list_tasks(filters: Dict[str, Any] = None, tag: str = None, sort_by: str = None, order: str = "asc", limit: int = None, offset: int = 0) -> List[TaskMetadataResponse]:
+
+def list_tasks(
+    filters: Dict[str, Any] = None,
+    tag: str = None,
+    sort_by: str = None,
+    order: str = "asc",
+    limit: int = None,
+    offset: int = 0,
+) -> List[TaskMetadataResponse]:
     """Lists tasks from SQLite index with support for filtering, sorting, and pagination."""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -287,16 +365,16 @@ def list_tasks(filters: Dict[str, Any] = None, tag: str = None, sort_by: str = N
         allowed_cols = {
             "priority": "priority",
             "due_date": "due_date",
-            "created_at": "timestamp_capture", # Map created_at to timestamp_capture
+            "created_at": "timestamp_capture",  # Map created_at to timestamp_capture
             "updated_at": "updated_at",
-            "timestamp_capture": "timestamp_capture"
+            "timestamp_capture": "timestamp_capture",
         }
 
         if sort_by in allowed_cols:
-             safe_col = allowed_cols[sort_by]
-             if order.lower() not in ["asc", "desc"]:
-                 order = "asc"
-             query += f" ORDER BY {safe_col} {order}"
+            safe_col = allowed_cols[sort_by]
+            if order.lower() not in ["asc", "desc"]:
+                order = "asc"
+            query += f" ORDER BY {safe_col} {order}"
 
     # Pagination
     if limit is not None:
@@ -315,14 +393,18 @@ def list_tasks(filters: Dict[str, Any] = None, tag: str = None, sort_by: str = N
         try:
             task_dict = dict(row)
             # remap keys if needed, e.g. ct_id -> task_id
-            task_dict['task_id'] = task_dict.pop('ct_id')
+            task_dict["task_id"] = task_dict.pop("ct_id")
 
-            if 'timestamp_commitment' in task_dict:
-                task_dict['commitment_timestamp'] = task_dict.pop('timestamp_commitment')
-            if 'timestamp_capture' in task_dict:
-                task_dict['capture_timestamp'] = task_dict.pop('timestamp_capture')
-            if 'timestamp_completion' in task_dict:
-                task_dict['completion_timestamp'] = task_dict.pop('timestamp_completion')
+            if "timestamp_commitment" in task_dict:
+                task_dict["commitment_timestamp"] = task_dict.pop(
+                    "timestamp_commitment"
+                )
+            if "timestamp_capture" in task_dict:
+                task_dict["capture_timestamp"] = task_dict.pop("timestamp_capture")
+            if "timestamp_completion" in task_dict:
+                task_dict["completion_timestamp"] = task_dict.pop(
+                    "timestamp_completion"
+                )
 
             tasks.append(TaskMetadataResponse(**task_dict))
         except Exception as e:

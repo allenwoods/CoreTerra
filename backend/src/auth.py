@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from src.users import get_user_by_username, get_all_users
@@ -10,8 +10,10 @@ router = APIRouter(tags=["auth", "users"])
 
 logger = logging.getLogger(__name__)
 
+
 class LoginRequest(BaseModel):
     username: str
+
 
 class LoginResponse(BaseModel):
     user_id: str
@@ -23,6 +25,7 @@ class LoginResponse(BaseModel):
     level: int = 1
     experience: int = 0
 
+
 class UserResponse(BaseModel):
     user_id: str
     name: str
@@ -33,9 +36,11 @@ class UserResponse(BaseModel):
     level: int = 1
     experience: int = 0
 
+
 class RoleResponse(BaseModel):
     id: str
     name: str
+
 
 @router.post("/auth/login", response_model=LoginResponse)
 def login(request: LoginRequest):
@@ -62,12 +67,12 @@ def login(request: LoginRequest):
         # No, better to just suppress the error for now if it's "u1" etc.
         # OR: Just remove the check. The database doesn't enforce UUID type, just string.
         # But for correctness, let's see. "u1" is NOT a UUID.
-        if len(user["user_id"]) > 10: # Simple heuristic
-             UUID(user["user_id"])
+        if len(user["user_id"]) > 10:  # Simple heuristic
+            UUID(user["user_id"])
     except ValueError:
         # logger.error(f"Invalid UUID for user {request.username}: {user['user_id']}")
         # raise HTTPException(status_code=500, detail="Internal data integrity error")
-        pass # Allow non-standard IDs for prototype users
+        pass  # Allow non-standard IDs for prototype users
 
     return LoginResponse(
         user_id=user["user_id"],
@@ -77,13 +82,15 @@ def login(request: LoginRequest):
         avatar=user["avatar"],
         color=user["color"],
         level=user.get("level", 1),
-        experience=user.get("experience", 0)
+        experience=user.get("experience", 0),
     )
+
 
 @router.get("/users", response_model=List[UserResponse])
 def get_users():
     """Get list of all users."""
     return get_all_users()
+
 
 @router.get("/roles", response_model=List[RoleResponse])
 def get_roles():

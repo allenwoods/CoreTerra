@@ -6,6 +6,7 @@ from src.storage import get_task, save_task
 
 router = APIRouter()
 
+
 @router.put("/tasks/{task_id}/status", response_model=TaskMetadataResponse)
 def update_task_status(task_id: UUID, request: TaskStatusUpdateRequest):
     """
@@ -23,7 +24,7 @@ def update_task_status(task_id: UUID, request: TaskStatusUpdateRequest):
     if request.updated_at != current_task.updated_at:
         raise HTTPException(
             status_code=409,
-            detail=f"Conflict: Task has been modified. Client version: {request.updated_at}, Server version: {current_task.updated_at}"
+            detail=f"Conflict: Task has been modified. Client version: {request.updated_at}, Server version: {current_task.updated_at}",
         )
 
     # 3. Enforce Business Rules
@@ -31,9 +32,9 @@ def update_task_status(task_id: UUID, request: TaskStatusUpdateRequest):
     # Rule: Cannot move to ACTIVE (or NEXT/WAITING) without a Role Owner
     if request.status in [Status.ACTIVE, Status.NEXT, Status.WAITING]:
         if not current_task.role_owner:
-             raise HTTPException(
+            raise HTTPException(
                 status_code=400,
-                detail="Cannot activate task without a Role Owner. Please assign a role first."
+                detail="Cannot activate task without a Role Owner. Please assign a role first.",
             )
 
     # 4. Apply Update
@@ -46,12 +47,15 @@ def update_task_status(task_id: UUID, request: TaskStatusUpdateRequest):
     # Set completion timestamp if done
     if request.status in [Status.DONE, Status.COMPLETED]:
         if not updated_metadata.completion_timestamp:
-             updated_metadata.completion_timestamp = now
+            updated_metadata.completion_timestamp = now
 
     # Set commitment timestamp if becoming active/next for the first time
-    if request.status in [Status.ACTIVE, Status.NEXT] and current_task.status == Status.INBOX:
-         if not updated_metadata.commitment_timestamp:
-             updated_metadata.commitment_timestamp = now
+    if (
+        request.status in [Status.ACTIVE, Status.NEXT]
+        and current_task.status == Status.INBOX
+    ):
+        if not updated_metadata.commitment_timestamp:
+            updated_metadata.commitment_timestamp = now
 
     # 5. Save
     commit_msg = f"UPDATE: {task_id} - status -> {request.status.value}"

@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
-import uuid
 from uuid import UUID
-from src.schemas import TaskMetadataPatchRequest, TaskMetadataResponse, TaskFullResponse
+from src.schemas import TaskMetadataPatchRequest, TaskMetadataResponse
 from src.storage import get_task, save_task
 
 router = APIRouter()
+
 
 @router.patch("/tasks/{task_id}", response_model=TaskMetadataResponse)
 def clarify_task(task_id: UUID, request: TaskMetadataPatchRequest):
@@ -27,7 +27,7 @@ def clarify_task(task_id: UUID, request: TaskMetadataPatchRequest):
     if request.updated_at != current_task.updated_at:
         raise HTTPException(
             status_code=409,
-            detail=f"Conflict: Task has been modified. Client version: {request.updated_at}, Server version: {current_task.updated_at}"
+            detail=f"Conflict: Task has been modified. Client version: {request.updated_at}, Server version: {current_task.updated_at}",
         )
 
     # 3. Apply Updates

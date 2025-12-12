@@ -4,8 +4,8 @@ import tempfile
 import pytest
 from fastapi.testclient import TestClient
 from src.main import app
-import sqlite3
 import git
+
 
 @pytest.fixture(scope="function")
 def temp_workspace():
@@ -40,6 +40,7 @@ def temp_workspace():
     if "CORETERRA_DB_PATH" in os.environ:
         del os.environ["CORETERRA_DB_PATH"]
 
+
 @pytest.fixture(scope="function")
 def seeded_workspace(temp_workspace):
     """
@@ -66,8 +67,9 @@ def seeded_workspace(temp_workspace):
 
     return temp_workspace
 
+
 @pytest.fixture(scope="function")
-def client(temp_workspace): # or seeded_workspace if we want default data
+def client(temp_workspace):  # or seeded_workspace if we want default data
     """
     FastAPI TestClient.
     """
