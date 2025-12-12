@@ -13,7 +13,7 @@ This directory contains the detailed implementation plans for connecting the Cor
 | **05** | [Task Capture & Creation](./05-creation.md) | Connects the Quick Add and Create Modal to `POST /tasks/`. | 🟢 Completed | 03 (to refresh list) |
 | **06** | [User & Settings](./06-user-settings.md) | Adds a Settings page to view user profile and system config. | 🟢 Completed | 02 |
 | **07** | [CI/CD & Testing](./07-ci-cd.md) | Sets up `vitest` and GitHub Actions for frontend quality assurance. | 🟢 Completed | 01 |
-| **08** | [Git History API](./08-git-history-api.md) | Exposes the task version history via `GET /tasks/{task_id}/history`. | ⚪ Ready | 04 |
+| **08** | [Git History API](./08-git-history-api.md) | Exposes the task version history via `GET /tasks/{task_id}/history`. | 🟢 Completed | 04 |
 
 ## Execution Flow
 
